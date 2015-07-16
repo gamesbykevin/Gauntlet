@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<images>
+    <image id="Level">images/game/level.png</image>
+    <image id="Enemies">images/game/enemies.png</image>
+    <image id="Heroes">images/game/heroes.png</image>
+</images>
