@@ -6,9 +6,12 @@ import com.gamesbykevin.framework.base.Sprite;
 import com.gamesbykevin.framework.resources.Disposable;
 
 import com.gamesbykevin.gauntlet.characters.Character;
+import com.gamesbykevin.gauntlet.level.Level;
+import com.gamesbykevin.gauntlet.level.Tile;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Rectangle;
 
 /**
  * The heroes, enemies, projectiles, tiles are all entities
@@ -24,7 +27,27 @@ public abstract class Entity extends Sprite implements Disposable
     /**
      * The 0 time delay
      */
-    protected static final long DELAY_NONE = 0;
+    public static final long DELAY_NONE = 0;
+    
+    /**
+     * Do we render the object
+     */
+    private boolean hide = false;
+    
+    /**
+     * Health of the character
+     */
+    private int health = 10;
+    
+    /**
+     * The lowest amount of health possible, 0
+     */
+    public static final int HEALTH_MINIMUM = 0;
+    
+    /**
+     * The damage the character can cause
+     */
+    private int damage = 5;
     
     protected Entity()
     {
@@ -33,15 +56,62 @@ public abstract class Entity extends Sprite implements Disposable
     }
     
     /**
-     * Do we have a collision?<br>
-     * We will check the (column, row) between the entity and character to determine collision.<br>
-     * The character has an assigned distance needed to determine collision.
-     * @param character Character with an assigned distance to determine collision
-     * @return true if the distance between the entity and character is within the assigned character's distance
+     * Assign the character health.<br>
+     * The character health can't go below 0.<br>
+     * If a number less than 0 is assigned 0 will be the health
+     * @param health The desired health
      */
-    public boolean hasCollision(final Character character)
+    public final void setHealth(final int health)
     {
-        return (Cell.getDistance(this, character) <= character.getDistance());
+        this.health = health;
+        
+        if (getHealth() < HEALTH_MINIMUM)
+            setHealth(HEALTH_MINIMUM);
+    }
+    
+    /**
+     * Get the health of the entity
+     * @return The remaining health
+     */
+    public int getHealth()
+    {
+        return this.health;
+    }
+    
+    /**
+     * Assign the damage the character is capable of
+     * @param damage The desired damage
+     */
+    public final void setDamage(final int damage)
+    {
+        this.damage = damage;
+    }
+    
+    /**
+     * Get the damage
+     * @return The damage the character is capable of
+     */
+    public int getDamage()
+    {
+        return this.damage;
+    }
+    
+    /**
+     * Do we hide this entity from rendering
+     * @param hide true=yes, false=no
+     */
+    public void setHidden(final boolean hide)
+    {
+        this.hide = hide;
+    }
+    
+    /**
+     * Is this entity hidden?
+     * @return true if we are to not render this entity, otherwise false
+     */
+    public boolean isHidden()
+    {
+        return this.hide;
     }
     
     /**
@@ -60,6 +130,17 @@ public abstract class Entity extends Sprite implements Disposable
     public boolean hasAnimation(final Object key) throws Exception
     {
         return (getSpriteSheet().getSpriteSheetAnimation(key) != null);
+    }
+    
+    /**
+     * Is the supplied animation the current one
+     * @param key The key of the object we are looking for
+     * @return true if this is the current animation, false otherwise
+     * @throws Exception 
+     */
+    public boolean isAnimation(final Object key) throws Exception
+    {
+        return (super.getSpriteSheet().getCurrent().equals(key));
     }
     
     /**
@@ -87,6 +168,76 @@ public abstract class Entity extends Sprite implements Disposable
         //if no current animation set, set this as a default
         if (getSpriteSheet().getCurrent() == null)
             setAnimation(key);
+    }
+    
+    /**
+     * Update the location based on the entity's (column, row)<br>
+     * Then once we update the location we can determine
+     * @param level Level object that will assist with (x,y) placement
+     */
+    public void updateLocation(final Level level)
+    {
+        //assign the new location
+        super.setX(level.getCoordinateX(getCol()));
+        super.setY(level.getCoordinateY(getRow()));
+        
+        //get the window
+        Rectangle window = level.getWindow();
+        
+        //determine if the entity is offscreen
+        if (getX() < window.x || getX() > window.x + window.width || getY() < window.y || getY() > window.y + window.height)
+        {
+            setHidden(true);
+        }
+        else
+        {
+            setHidden(false);
+        }
+    }
+    
+    /**
+     * Update the entity animation
+     * @param time Time to deduct in (nanoseconds)
+     * @throws Exception 
+     */
+    public void updateAnimation(final long time) throws Exception
+    {
+        super.getSpriteSheet().update(time);
+    }
+    
+    /**
+     * Do we have collision?<br>
+     * Here we will compare the (column, row) location of the two entities to determine collision.<br>
+     * If the entities are the same object, we will no check and return false
+     * @param entity Entity we want to check
+     * @return true=yes, false=no
+     */
+    public boolean hasCollision(final Entity entity) throws Exception
+    {
+        //if we are checking the same entity, return false
+        if (hasId(entity))
+            return false;
+        
+        //calculate the distance
+        final double distance = Cell.getDistance(this, entity);
+        
+        //if we are close enough, we have collision
+        if (distance < getCollisionDistance())
+            return true;
+        if (distance < entity.getCollisionDistance())
+            return true;
+        
+        //we don't have collision
+        return false;
+    }
+    
+    /**
+     * Get the collision distance.
+     * @return The cell distance at which to check for collision for this entity
+     */
+    public double getCollisionDistance() throws Exception
+    {
+        return ((getSpriteSheet().getLocation().getWidth() * .75) / Tile.DEFAULT_DIMENSION);
     }
     
     /**

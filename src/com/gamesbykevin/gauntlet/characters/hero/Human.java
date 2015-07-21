@@ -15,7 +15,7 @@ import java.awt.Rectangle;
  */
 public final class Human extends Hero
 {
-    public Human(final Hero.Type type) throws Exception
+    protected Human(final Hero.Type type) throws Exception
     {
         super(type);
     }
@@ -23,11 +23,11 @@ public final class Human extends Hero
     @Override
     public void update(final Engine engine) throws Exception
     {
-        //update projectiles
-        super.updateProjectiles(engine);
-        
         double dx = 0, dy = 0;
 
+        //did keyboard input occur
+        boolean input = true;
+        
         //determine if we are to pause the animation
         super.getSpriteSheet().setPause(engine.getKeyboard().isKeyPressed() ? false : true);
         
@@ -76,11 +76,18 @@ public final class Human extends Hero
             dy = getSpeed();
             setAnimation(Character.Directions.S);
         }
+        else
+        {
+            //no keys were pressed
+            input = false;
+        }
         
-        //this will shoot the projectile
+        /**
+         * Check if we want to shoot a projectile
+         */
         if (engine.getKeyboard().hasKeyReleased(KeyEvent.VK_A))
         {
-            //stop releasing the key
+            //stop the key released event
             engine.getKeyboard().removeKeyReleased(KeyEvent.VK_A);
             
             //determine which projectile animation to add
@@ -123,6 +130,10 @@ public final class Human extends Hero
             }
         }
         
+        //if there was no keyboard input, no need to continue
+        if (!input)
+            return;
+        
         //store the original col, row
         final double col = getCol();
         final double row = getRow();
@@ -134,12 +145,13 @@ public final class Human extends Hero
         //get the level
         final Level level = engine.getManager().getLevel();
         
-        //check for collision, and if so move back to previous position
-        if (level.hasWallCollision(this, dx, dy))
+        /**
+         * Check for collision, and if so move back to previous position
+         */
+        if (level.hasWallCollision(this, dx, dy) || engine.getManager().getEnemies().hasCollision(this))
         {
             super.setCol(col);
             super.setRow(row);
-            
         }
         else
         {
@@ -148,8 +160,7 @@ public final class Human extends Hero
             double y = level.getCoordinateY(getRow());
 
             //assign the new location
-            super.setX(x);
-            super.setY(y);
+            super.updateLocation(level);
             
             //get the viewable window of the level
             final Rectangle window = level.getWindow();
@@ -204,8 +215,5 @@ public final class Human extends Hero
                 level.updateTilesRow(-dy);
             }
         }
-        
-        //update animation
-        super.getSpriteSheet().update(engine.getTime());
     }
 }

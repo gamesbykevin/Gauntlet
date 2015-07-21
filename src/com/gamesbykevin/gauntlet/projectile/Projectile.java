@@ -1,18 +1,22 @@
 package com.gamesbykevin.gauntlet.projectile;
 
 import com.gamesbykevin.gauntlet.characters.Character;
+import static com.gamesbykevin.gauntlet.characters.Character.Type.EnemyGenerator1;
+import static com.gamesbykevin.gauntlet.characters.Character.Type.EnemyGenerator2;
 import com.gamesbykevin.gauntlet.engine.Engine;
+import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.level.Level;
 
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.util.UUID;
 
 /**
  * Projectile
  * @author GOD
  */
-public final class Projectile extends Character
+public final class Projectile extends Entity
 {
     //the life of the projectile
     private boolean dead = false;
@@ -29,45 +33,33 @@ public final class Projectile extends Character
      * Create a new projectile.
      * @param direction Direction facing
      * @param speed Speed of projectile
-     * @param col Current column location
-     * @param row Current row location
      * @param r Rectangle containing animation coordinates
      * @throws Exception 
      */
-    public Projectile(final Facing direction, final double speed, final double col, final double row, final Rectangle r) throws Exception
+    public Projectile(final Facing direction, final double speed, final Rectangle r) throws Exception
     {
-        this(direction, speed, col, row, r.x, r.y, r.width, r.height);
+        this(direction, speed, r.x, r.y, r.width, r.height);
     }
     
     /**
      * Create a new projectile.
      * @param direction Direction facing
      * @param speed Speed of projectile
-     * @param col Current column location
-     * @param row Current row location
      * @param x x-coordinate of single animation
      * @param y y-coordinate of single animation
      * @param w width of single animation
      * @param h height of single animation
      * @throws Exception 
      */
-    public Projectile(final Facing direction, final double speed, final double col, final double row, final int x, final int y, final int w, final int h) throws Exception
+    public Projectile(final Facing direction, final double speed, final int x, final int y, final int w, final int h) throws Exception
     {
-        //call parent contstructor
         super();
-        
-        //assign the current location
-        super.setCol(col);
-        super.setRow(row);
         
         //add the single animation as the projectile
         super.addAnimation(DEFAULT_ANIMATION_KEY, x, y, w, h);
         
         //assign the dimensions
-        setDimensions(w * SIZE_RATIO, h * SIZE_RATIO);
-        
-        //assign collision distance
-        super.setDistance();
+        setDimensions(w * Character.SIZE_RATIO, h * Character.SIZE_RATIO);
         
         //determine the direction by the specified parameter
         switch (direction)
@@ -113,7 +105,11 @@ public final class Projectile extends Character
         }
     }
     
-    @Override
+    /**
+     * Update the projectile
+     * @param engine
+     * @throws Exception 
+     */
     public void update(final Engine engine) throws Exception
     {
         //do not continue if already dead
@@ -132,13 +128,78 @@ public final class Projectile extends Character
         setRow(getRow() + getVelocityY());
         
         //update where this is rendered on screen
-        setX(level.getCoordinateX(getCol()));
-        setY(level.getCoordinateY(getRow()));
+        super.updateLocation(level);
+        
+        //our tmp character object
+        Character character;
+
+        //was this projectile created from a hero, if so we will check the enemies
+        if (engine.getManager().getHeroes().getCharacter(getParentId()) != null)
+        {
+            //check for collision with the enemies
+            character = engine.getManager().getEnemies().getCharacter(this);
+
+            //if a character was found and the character was not the creator of the projectile
+            if (character != null && !character.hasId(getParentId()))
+            {
+                //mark the projectile as dead
+                setDead(true);
+
+                switch (character.getType())
+                {
+                    /**
+                     * If this is an enemy generator, we will perform special logic to update the animation
+                     */
+                    case EnemyGenerator1:
+                    case EnemyGenerator2:
+
+                        //apply damage to the found character
+                        character.setHealth(1);
+
+                        if (character.isAnimation(Character.Directions.S))
+                        {
+                            character.setAnimation(Character.Directions.W);
+                        }
+                        else if (character.isAnimation(Character.Directions.W))
+                        {
+                            character.setAnimation(Character.Directions.E);
+                        }
+                        else if (character.isAnimation(Character.Directions.E))
+                        {
+                            character.setHealth(0);
+                        }
+                        break;
+
+                    default:
+
+                        //apply damage to the found character
+                        character.setHealth(character.getHealth() - getDamage());
+                        break;
+                }
+            }
+        }
+        else if (engine.getManager().getEnemies().getCharacter(getParentId()) != null)
+        {
+            /**
+             * If this projectile was created from an enemy, check the heroes
+             */
+            character = engine.getManager().getHeroes().getCharacter(this);
+
+            //if a character was found and the character was not the creator of the projectile
+            if (character != null && !character.hasId(getParentId()))
+            {
+                //mark the projectile as dead
+                setDead(true);
+
+                //apply damage to the found character
+                character.setHealth(character.getHealth() - getDamage());
+            }
+        }
     }
     
     /**
-     * Set the life of the projectile
-     * @param dead true if dead, false otherwise
+     * Set if the projectile is dead
+     * @param dead true = yes, false = no
      */
     public void setDead(final boolean dead)
     {

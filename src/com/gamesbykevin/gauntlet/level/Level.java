@@ -1,11 +1,9 @@
 package com.gamesbykevin.gauntlet.level;
 
 import com.gamesbykevin.framework.awt.CustomImage;
-import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.framework.maze.Maze;
 import com.gamesbykevin.framework.maze.algorithm.*;
 
-import com.gamesbykevin.gauntlet.characters.Character;
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.shared.IElement;
@@ -33,7 +31,7 @@ public final class Level extends CustomImage implements IElement
     /**
      * The smallest dimensions for a single room
      */
-    public static final int MIN_ROOM_DIMENSIONS = 3;
+    public static final int MIN_ROOM_DIMENSIONS = 4;
     
     /**
      * The number of columns to display on a single screen
@@ -53,19 +51,27 @@ public final class Level extends CustomImage implements IElement
     //the tiles that make up the level
     private Tile[][] tiles;
     
+    /**
+     * Create a new level
+     * @param cols The column dimensions for our maze
+     * @param rows The row dimensions for our maze
+     * @param roomDimensions The size of each individual room in the maze
+     * @param image Image containing level graphics
+     * @throws Exception 
+     */
     public Level(final int cols, final int rows, final int roomDimensions, final Image image) throws Exception
     {
         super((roomDimensions * cols) * Tile.DEFAULT_DIMENSION, (roomDimensions * rows) * Tile.DEFAULT_DIMENSION);
-        
-        //store the sheet containing all the graphics for a level
-        super.setImage(image);
         
         //assign the room dimensions
         this.roomDimensions = roomDimensions;
         
         //make sure we meet the requirement
         if (this.roomDimensions < MIN_ROOM_DIMENSIONS)
-            this.roomDimensions = MIN_ROOM_DIMENSIONS;
+            throw new Exception("The supplied room dimensions (" + roomDimensions + ") do not meet the minimum (" + MIN_ROOM_DIMENSIONS + ")");
+        
+        //store the sheet containing all the graphics for a level
+        super.setImage(image);
         
         //create a maze
         maze = new RecursiveBacktracking(cols, rows);
@@ -73,7 +79,7 @@ public final class Level extends CustomImage implements IElement
         maze.getProgress().setDescription("Creating level.. ");
         
         //create array for our tiles
-        this.tiles = new Tile[roomDimensions * rows][roomDimensions * cols];
+        this.tiles = new Tile[this.roomDimensions * rows][this.roomDimensions * cols];
         
         //create a new window where the tiles will be rendered
         this.window = new Rectangle(-Tile.DEFAULT_DIMENSION * 1, -Tile.DEFAULT_DIMENSION * 1, Shared.ORIGINAL_WIDTH + (Tile.DEFAULT_DIMENSION * 2), Shared.ORIGINAL_HEIGHT + (Tile.DEFAULT_DIMENSION * 2));
@@ -86,7 +92,7 @@ public final class Level extends CustomImage implements IElement
     @Override
     public void dispose()
     {
-        super.dispose();
+        super.getBufferedImage().flush();
         
         maze.dispose();
         maze = null;
@@ -107,7 +113,7 @@ public final class Level extends CustomImage implements IElement
      * Get the room dimensions
      * @return The size (columns, rows) of each room for this level
      */
-    protected int getRoomDimensions()
+    public int getRoomDimensions()
     {
         return this.roomDimensions;
     }
@@ -331,12 +337,12 @@ public final class Level extends CustomImage implements IElement
      * @param dy y-velocity
      * @return true if we are too close to a wall, false otherwise
      */
-    public boolean hasWallCollision(final Character character, final double dx, final double dy)
+    public boolean hasWallCollision(final Entity entity, final double dx, final double dy) throws Exception
     {
-        int colMin = (int)(character.getCol() - character.getDistance());
-        int colMax = (int)(character.getCol() + character.getDistance());
-        int rowMin = (int)(character.getRow() - character.getDistance());
-        int rowMax = (int)(character.getRow() + character.getDistance());
+        int colMin = (int)(entity.getCol() - entity.getCollisionDistance());
+        int colMax = (int)(entity.getCol() + entity.getCollisionDistance());
+        int rowMin = (int)(entity.getRow() - entity.getCollisionDistance());
+        int rowMax = (int)(entity.getRow() + entity.getCollisionDistance());
         
         if (dx < 0 && (getTile(colMin, rowMin).isWall() || getTile(colMin, rowMax).isWall()))
         {
@@ -406,6 +412,7 @@ public final class Level extends CustomImage implements IElement
         //if the maze hasn't generated yet
         if (!maze.isGenerated())
         {
+            //render progress
             maze.render(graphics);
         }
         else

@@ -62,12 +62,19 @@ public final class Tile extends Entity
     }
     
     /**
-     * Assign the type
+     * Assign the type.<br>
+     * Depending on the type, will also determine if this tile is solid
      * @param type Type of animation to show
      */
     protected final void setType(final Type type)
     {
         this.type = type;
+        
+        /**
+         * If this is a door or a wall<br>
+         * Then the tile is solid
+         */
+        setSolid(isDoor() || isWall());
     }
     
     /**

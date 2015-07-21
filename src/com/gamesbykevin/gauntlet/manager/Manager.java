@@ -1,6 +1,9 @@
 package com.gamesbykevin.gauntlet.manager;
 
-import com.gamesbykevin.gauntlet.characters.hero.*;
+import com.gamesbykevin.gauntlet.characters.hero.Heroes;
+import com.gamesbykevin.gauntlet.characters.enemy.Enemies;
+import com.gamesbykevin.gauntlet.characters.Character;
+import com.gamesbykevin.gauntlet.characters.CharacterHelper;
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.level.Level;
 import com.gamesbykevin.gauntlet.menu.CustomMenu;
@@ -21,10 +24,14 @@ import java.util.List;
  */
 public final class Manager implements IManager
 {
+    //the current level in play
     private Level level;
     
-    //our hero
-    private Hero hero;
+    //our hero container
+    private Heroes heroes;
+    
+    //enemy container
+    private Enemies enemies;
     
     /**
      * Constructor for Manager, this is the point where we load any menu option configurations
@@ -42,30 +49,40 @@ public final class Manager implements IManager
         return this.level;
     }
     
-    public Hero getHero()
+    public Heroes getHeroes()
     {
-        return this.hero;
+        return this.heroes;
+    }
+    
+    public Enemies getEnemies()
+    {
+        return this.enemies;
     }
     
     @Override
     public void reset(final Engine engine) throws Exception
     {
-        if (this.level == null)
+        if (getLevel() == null)
         {
-            this.level = new Level(15, 5, 8, engine.getResources().getGameImage(GameImages.Keys.Level));
+            int roomDimensions = 3;
+            
+            if (roomDimensions < Level.MIN_ROOM_DIMENSIONS)
+                roomDimensions = Level.MIN_ROOM_DIMENSIONS;
+            
+            this.level = new Level(9, 9, roomDimensions, engine.getResources().getGameImage(GameImages.Keys.Level));
             this.level.setX(0);
             this.level.setY(0);
         }
         
-        if (hero == null)
+        if (getHeroes() == null)
         {
-            this.hero = new Human(Hero.Type.Elf);
-            this.hero.setImage(engine.getResources().getGameImage(GameImages.Keys.Heroes));
-            this.hero.setCol(1.5);
-            this.hero.setRow(1.5);
-            
-            this.hero.setX(level.getCoordinateX(this.hero.getCol()));
-            this.hero.setY(level.getCoordinateY(this.hero.getRow()));
+            this.heroes = new Heroes(engine.getResources().getGameImage(GameImages.Keys.Heroes));
+            getHeroes().add(1.5, 1.5, Character.Type.Elf);
+        }
+        
+        if (getEnemies() == null)
+        {
+            this.enemies = new Enemies(engine.getResources().getGameImage(GameImages.Keys.Enemies));
         }
         
         //see what game we selected
@@ -90,6 +107,24 @@ public final class Manager implements IManager
     {
         try
         {
+            if (level != null)
+            {
+                level.dispose();
+                level = null;
+            }
+            
+            if (enemies != null)
+            {
+                enemies.dispose();
+                enemies = null;
+            }
+            
+            if (heroes != null)
+            {
+                heroes.dispose();
+                heroes = null;
+            }
+            
             //recycle objects
             super.finalize();
         }
@@ -107,14 +142,25 @@ public final class Manager implements IManager
     @Override
     public void update(final Engine engine) throws Exception
     {
-        if (level != null)
+        if (getLevel() != null)
         {
-            level.update(engine);
+            //has the maze been generated
+            boolean generated = getLevel().getMaze().isGenerated();
             
-            if (level.getMaze().isGenerated())
+            //update the level
+            getLevel().update(engine);
+            
+            //the level must be created before we update anything else
+            if (getLevel().getMaze().isGenerated())
             {
-                if (hero != null)
-                    hero.update(engine);
+                //if the level previously wasn't created
+                if (!generated)
+                    getEnemies().spawn(getLevel(), engine.getRandom());
+                
+                if (getHeroes() != null)
+                    getHeroes().update(engine);
+                if (getEnemies() != null)
+                    getEnemies().update(engine);
             }
         }
     }
@@ -126,17 +172,19 @@ public final class Manager implements IManager
     @Override
     public void render(final Graphics graphics) throws Exception
     {
-        if (level != null)
+        if (getLevel() != null)
         {
-            level.render(graphics);
+            //render the level
+            getLevel().render(graphics);
             
-            //only draw the hero if the maze has been generated
-            if (level.getMaze().isGenerated())
+            //only these if the maze has been generated
+            if (getLevel().getMaze().isGenerated())
             {
-                if (hero != null)
-                    hero.render(graphics);
+                if (getEnemies() != null)
+                    getEnemies().render(graphics);
+                if (getHeroes() != null)
+                    getHeroes().render(graphics);
             }
         }
-        
     }
 }
