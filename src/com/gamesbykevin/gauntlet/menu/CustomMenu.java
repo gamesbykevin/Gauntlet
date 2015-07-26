@@ -38,7 +38,7 @@ public final class CustomMenu extends Menu
      */
     public enum OptionKey 
     {
-        Sound, FullScreen, Game
+        Sound, FullScreen, MapSize, Hero, Difficulty
     }
     
     /**

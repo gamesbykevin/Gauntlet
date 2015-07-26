@@ -88,11 +88,17 @@ public final class Heroes extends Characters
     /**
      * Add hero at the default start point
      * @param type Type of hero to add
+     * @param health The desired starting health
      * @throws Exception 
      */
-    public void add(final Character.Type type) throws Exception
+    public void add(final Character.Type type, final int health) throws Exception
     {
         add(START_LOCATION, START_LOCATION, type);
+        
+        for (int index = 0; index < super.getCharacters().size(); index++)
+        {
+            super.getCharacters().get(index).setHealth(health);
+        }
     }
     
     @Override

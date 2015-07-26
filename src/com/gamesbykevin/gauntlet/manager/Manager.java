@@ -72,14 +72,29 @@ public final class Manager implements IManager
     @Override
     public void reset(final Engine engine) throws Exception
     {
-        /*
-        MAZE SIZE;
-        CHARACTER SELECTION;
-        DIFFICULTY (HERO HEALTH);
-        */
-        
         //size of the maze
-        int dimensions = 4;//8;//12;
+        int dimensions;
+        
+        switch (engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.MapSize))
+        {
+            //normal
+            case 0:
+                dimensions = 8;
+                break;
+            
+            //large
+            case 1:
+                dimensions = 12;
+                break;
+             
+            //small
+            case 2:
+                dimensions = 4;
+                break;
+                
+            default:
+                throw new Exception("Menu selection index not handled here " + engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.MapSize));
+        }
 
         //size of each room in the maze
         int roomDimensions = 4;
@@ -102,7 +117,50 @@ public final class Manager implements IManager
         if (getHeroes() == null)
         {
             this.heroes = new Heroes(engine.getResources().getGameImage(GameImages.Keys.Heroes));
-            getHeroes().add(Character.Type.Elf);
+            
+            //the health
+            final int health;
+            
+            //the starting health
+            switch (engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Difficulty))
+            {
+                case 0:
+                    health = 2500;
+                    break;
+                    
+                case 1:
+                    health = 1500;
+                    break;
+                    
+                case 2:
+                    health = 5000;
+                    break;
+                    
+                default:
+                    throw new Exception("Menu selection index not handled here " + engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Difficulty));
+            }
+            
+            switch (engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Hero))
+            {
+                case 0:
+                    getHeroes().add(Character.Type.Elf, health);
+                    break;
+                    
+                case 1:
+                    getHeroes().add(Character.Type.Valkyrie, health);
+                    break;
+                    
+                case 2:
+                    getHeroes().add(Character.Type.Warrior, health);
+                    break;
+                    
+                case 3:
+                    getHeroes().add(Character.Type.Wizard, health);
+                    break;
+                    
+                default:
+                    throw new Exception("Menu selection index not handled here " + engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Hero));
+            }
         }
         else
         {
@@ -208,12 +266,12 @@ public final class Manager implements IManager
                     getBonuses().spawn(getLevel(), engine.getRandom());
                 }
                 
+                if (getBonuses() != null)
+                    getBonuses().update(engine);
                 if (getHeroes() != null)
                     getHeroes().update(engine);
                 if (getEnemies() != null)
                     getEnemies().update(engine);
-                if (getBonuses() != null)
-                    getBonuses().update(engine);
             }
         }
     }
