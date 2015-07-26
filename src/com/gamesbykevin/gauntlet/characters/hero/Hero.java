@@ -4,6 +4,7 @@ import com.gamesbykevin.framework.util.Timer;
 import com.gamesbykevin.framework.util.Timers;
 
 import com.gamesbykevin.gauntlet.characters.Character;
+import com.gamesbykevin.gauntlet.shared.Shared;
 
 /**
  * The Hero class
@@ -63,6 +64,9 @@ public abstract class Hero extends Character
      */
     private Timer timerHealth;
     
+    //our player stats
+    private Status status;
+    
     /**
      * Create a new hero of specified type
      * @param type The type of player we want
@@ -85,6 +89,9 @@ public abstract class Hero extends Character
         
         //the timer will be 1 second in length
         this.timerHealth = new Timer(Timers.NANO_SECONDS_PER_SECOND);
+        
+        this.status = new Status(Shared.ORIGINAL_WIDTH, 20);
+        this.status.render();
         
         /**
          * Assign different attributes to make each hero unique such as
@@ -131,6 +138,23 @@ public abstract class Hero extends Character
             default:
                 throw new Exception("Type not setup here " + getType().toString());
         }
+    }
+    
+    protected Status getStatus()
+    {
+        return this.status;
+    }
+    
+    @Override
+    public void setHealth(final int health)
+    {
+        super.setHealth(health);
+        
+        //assign health
+        getStatus().setHealth(health);
+        
+        //render a new image
+        getStatus().render();
     }
     
     /**
@@ -185,6 +209,12 @@ public abstract class Hero extends Character
     public void addScore(final int score)
     {
         this.score += score;
+        
+        //assign value
+        getStatus().setScore(this.score);
+        
+        //render a new image
+        getStatus().render();
     }
     
     /**
@@ -202,6 +232,12 @@ public abstract class Hero extends Character
     public void addPotion()
     {
         this.potions++;
+        
+        //assign value
+        getStatus().setPotions(potions);
+        
+        //render a new image
+        getStatus().render();
     }
     
     /**
@@ -223,6 +259,12 @@ public abstract class Hero extends Character
         //just make sure we don't have less than 0
         if (this.potions < 0)
             this.potions = 0;
+        
+        //assign value
+        getStatus().setPotions(potions);
+
+        //render a new image
+        getStatus().render();
     }
     
     /**
@@ -231,6 +273,12 @@ public abstract class Hero extends Character
     public void addKey()
     {
         this.keys++;
+        
+        //assign value
+        getStatus().setKeys(keys);
+        
+        //render a new image
+        getStatus().render();
     }
     
     /**
@@ -252,5 +300,11 @@ public abstract class Hero extends Character
         //just make sure we don't have less than 0
         if (this.keys < 0)
             this.keys = 0;
+        
+        //assign value
+        getStatus().setKeys(keys);
+        
+        //render a new image
+        getStatus().render();
     }
 }

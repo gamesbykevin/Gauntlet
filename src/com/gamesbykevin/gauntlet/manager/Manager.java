@@ -184,19 +184,6 @@ public final class Manager implements IManager
         {
             getBonuses().reset();
         }
-        
-        //see what game we selected
-        //final int gameSelection = engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Game);
-        
-        //get the difficulty
-        //final int difficultyIndex = engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Difficulty);
-        
-        //get the game mode
-        //final int modeIndex = engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Mode);
-        
-        //the background image will be determined by multi-player
-        //this.background = engine.getResources().getGameImage(options.get(engine.getRandom().nextInt(options.size())));
-        //this.background = engine.getResources().getGameImage(GameImages.Keys.Cards);
     }
     
     /**

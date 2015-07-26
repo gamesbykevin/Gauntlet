@@ -376,10 +376,12 @@ public class Bonuses implements IElement
                         break;
                         
                     case Food:
+                        hero.addScore(Bonus.SCORE_FOOD);
                         hero.setHealth(hero.getHealth() + Bonus.FOOD_BONUS);
                         break;
                         
                     case Key:
+                        hero.addScore(Bonus.SCORE_KEY);
                         hero.addKey();
                         break;
                         

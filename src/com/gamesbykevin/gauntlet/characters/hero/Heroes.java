@@ -4,6 +4,7 @@ import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.gauntlet.characters.Character;
 import com.gamesbykevin.gauntlet.characters.Characters;
 import com.gamesbykevin.gauntlet.entity.Entity;
+import java.awt.Graphics;
 
 import java.awt.Image;
 
@@ -113,5 +114,21 @@ public final class Heroes extends Characters
         
         //add to list
         super.add(character);
+    }
+    
+    @Override
+    public void render(final Graphics graphics) throws Exception
+    {
+        super.render(graphics);
+        
+        //render each character in the list
+        for (int index = 0; index < getCharacters().size(); index++)
+        {
+            //get the current character
+            Hero hero = (Hero)getCharacters().get(index);
+            
+            //draw status message
+            hero.getStatus().draw(graphics, hero.getStatus().getBufferedImage());
+        }
     }
 }

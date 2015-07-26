@@ -69,7 +69,7 @@ public abstract class Entity extends Sprite implements Disposable
      * If a number less than 0 is assigned 0 will be the health
      * @param health The desired health
      */
-    public final void setHealth(final int health)
+    public void setHealth(final int health)
     {
         this.health = health;
         

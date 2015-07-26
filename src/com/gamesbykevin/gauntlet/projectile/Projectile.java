@@ -1,6 +1,7 @@
 package com.gamesbykevin.gauntlet.projectile;
 
 import com.gamesbykevin.gauntlet.characters.Character;
+import com.gamesbykevin.gauntlet.characters.hero.Hero;
 import static com.gamesbykevin.gauntlet.characters.Character.Type.EnemyGenerator1;
 import static com.gamesbykevin.gauntlet.characters.Character.Type.EnemyGenerator2;
 import com.gamesbykevin.gauntlet.engine.Engine;
@@ -216,7 +217,6 @@ public final class Projectile extends Entity
                     //we won't remove yet
                     setDead(false);
                 }
-                
 
                 switch (character.getType())
                 {
@@ -240,6 +240,13 @@ public final class Projectile extends Entity
                         else if (character.isAnimation(Character.Directions.E))
                         {
                             character.setHealth(0);
+                            
+                            //if the character is now dead, add score to hero
+                            if (character.isDead())
+                            {
+                                Hero hero = (Hero)engine.getManager().getHeroes().getCharacter(getParentId());
+                                hero.addScore(Bonus.SCORE_ENEMY_GENERATOR);
+                            }
                         }
                         break;
 
@@ -263,6 +270,13 @@ public final class Projectile extends Entity
 
                         //apply damage to the character
                         character.setHealth(character.getHealth() - getDamage());
+                        
+                        //if the character is now dead, add score to hero
+                        if (character.isDead())
+                        {
+                            Hero hero = (Hero)engine.getManager().getHeroes().getCharacter(getParentId());
+                            hero.addScore(Bonus.SCORE_ENEMY);
+                        }
                         break;
                 }
             }

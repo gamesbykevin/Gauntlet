@@ -39,6 +39,26 @@ public final class Bonus extends Entity
     protected static final int SCORE_TREASURE_BAG = 100;
     
     /**
+     * The score for collecting food
+     */
+    protected static final int SCORE_FOOD = 100;
+    
+    /**
+     * The score for collecting a key
+     */
+    protected static final int SCORE_KEY = 200;
+    
+    /**
+     * The score for kiling an enemy
+     */
+    public static final int SCORE_ENEMY = 20;
+    
+    /**
+     * The score for killing an enemy generator
+     */
+    public static final int SCORE_ENEMY_GENERATOR = 75;
+    
+    /**
      * The score for the treasure chest
      */
     protected static final int SCORE_TREASURE_CHEST = 500;

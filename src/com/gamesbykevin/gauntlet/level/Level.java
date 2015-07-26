@@ -123,8 +123,11 @@ public final class Level extends CustomImage implements IElement
             {
                 for (int row = 0; row < tiles.length; row++)
                 {
-                    tiles[row][col].dispose();
-                    tiles[row][col] = null;
+                    if (tiles[row][col] != null)
+                    {
+                        tiles[row][col].dispose();
+                        tiles[row][col] = null;
+                    }
                 }
             }
         
