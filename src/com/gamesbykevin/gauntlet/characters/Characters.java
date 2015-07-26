@@ -88,6 +88,7 @@ public abstract class Characters implements IElement
                 return characters.get(index);
         }
         
+        //if the character was not found, return null
         return null;
     }
     
@@ -164,7 +165,7 @@ public abstract class Characters implements IElement
     
     /**
      * Get the character that has collision with the supplied entity
-     * @param entity The entity we want to check
+     * @param entity The entity we want to check for collision
      * @return The character in collision with the supplied entity, if there is no collision null is returned
      */
     public Character getCharacter(final Entity entity) throws Exception

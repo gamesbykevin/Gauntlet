@@ -13,9 +13,39 @@ import java.awt.Image;
  */
 public final class Heroes extends Characters
 {
+    /**
+     * The (column, row) to spawn the first hero
+     */
+    private static final double START_LOCATION = 1.5;
+    
     public Heroes(final Image image)
     {
         super(image);
+    }
+    
+    /**
+     * Reset all existing objects
+     */
+    public void reset()
+    {
+        double col = START_LOCATION;
+        double row = START_LOCATION;
+        
+        for (int index = 0; index < super.getCharacters().size(); index++)
+        {
+            //get the current character
+            Character character = super.getCharacters().get(index);
+            
+            //reset position
+            character.setCol(col);
+            character.setRow(row);
+            
+            //remove any existing projectiles
+            character.removeProjectiles();
+            
+            //move the column over
+            col += 1.0d;
+        }
     }
     
     /**
@@ -53,6 +83,16 @@ public final class Heroes extends Characters
         
         //return the character found
         return hero;
+    }
+    
+    /**
+     * Add hero at the default start point
+     * @param type Type of hero to add
+     * @throws Exception 
+     */
+    public void add(final Character.Type type) throws Exception
+    {
+        add(START_LOCATION, START_LOCATION, type);
     }
     
     @Override

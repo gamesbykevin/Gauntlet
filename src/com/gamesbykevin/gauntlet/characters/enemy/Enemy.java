@@ -13,6 +13,7 @@ import com.gamesbykevin.gauntlet.projectile.Projectile.Facing;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Random;
 
 /**
  * Enemy in the game
@@ -23,16 +24,23 @@ public class Enemy extends Character
     //determine how often the enemy can attack via collision
     private Timer timerCollision;
     
-    //determine how often the enemy can attack via projectile
-    private Timer timerProjectile;
-    
     //determine how long the enemy is hurt
     private Timer timerHurt;
     
     /**
      * The speed at which the character can move
      */
-    protected static final double ENEMY_SPEED = 0.015;
+    protected static final double DEFAULT_ENEMY_SPEED = 0.015;
+    
+    /**
+     * The speed at which the character can move
+     */
+    protected static final double ENEMY_SPEED_SLOW = 0.010;
+    
+    /**
+     * The speed at which the character can move
+     */
+    protected static final double ENEMY_SPEED_SLOWER = 0.0075;
     
     /**
      * Default time to pause the enemy when hurt
@@ -45,22 +53,28 @@ public class Enemy extends Character
     protected static final long DELAY_COLLISION = Timers.toNanoSeconds(750L);
     
     /**
-     * Default time to wait until the next projectile
-     */
-    protected static final long DELAY_PROJECTILE = Timers.toNanoSeconds(5000L);
-    
-    /**
      * Default time to wait until we spawn a new enemy
      */
-    protected static final long SPAWN_DELAY = Timers.toNanoSeconds(10000L);
+    protected static final long SPAWN_DELAY = Timers.toNanoSeconds(3000L);
     
-    //list of optional cell to spawn an enemy
+    //list of optional cell to spawn an enemy, used by the enemy generator
     private List<Cell> options;
     
     //the previous health to determine if the enemy was hurt 
     private int previousHealth;
     
-    public Enemy(final Type type) throws Exception
+    //health
+    private static final int HEALTH_1 = 1;
+    private static final int HEALTH_2 = 2;
+    private static final int HEALTH_3 = 3;
+    
+    //damage
+    private static final int DAMAGE_1 = 10;
+    private static final int DAMAGE_2 = 25;
+    private static final int DAMAGE_3 = 100;
+    private static final int DAMAGE_4 = 150;
+    
+    public Enemy(final Type type, final Random random) throws Exception
     {
         super(type);
 
@@ -70,11 +84,11 @@ public class Enemy extends Character
          * 2. Projectile limit
          * 3. Projectile speed ratio
          * 4. Time delay between each projectile fired
-         * 4. Damage to enemies
+         * 4. Damage
          * 6. Health
          */
         
-        super.setSpeed(ENEMY_SPEED);
+        super.setSpeed(DEFAULT_ENEMY_SPEED);
         
         //set the time to determine when to shoot a projectile
         setTimerProjectile(DELAY_PROJECTILE);
@@ -82,19 +96,105 @@ public class Enemy extends Character
         //set the time to determine when the enemy can move
         setTimerHurt(DELAY_HURT);
         
+        //setup the rate of collision attack
+        setTimerCollision(DELAY_COLLISION);
+        
         //determine the timer by Character type
         switch (getType())
         {
+            case Ghost:
+                super.setSpeed(DEFAULT_ENEMY_SPEED);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_1);
+                super.setHealth(HEALTH_2);
+                break;
+                
+            case Demon:
+                super.setSpeed(ENEMY_SPEED_SLOW);
+                super.setProjectileLimit(1);
+                super.setProjectileSpeedRatio(PROJECTILE_SPEED_RATIO_FASTEST);
+                super.getTimerProjectile().setReset(DELAY_PROJECTILE_SLOW);
+                super.setDamage(DAMAGE_2);
+                super.setHealth(HEALTH_1);
+                break;
+                
+            case Blob:
+                super.setSpeed(ENEMY_SPEED_SLOWER);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_3);
+                super.setHealth(HEALTH_1);
+                break;
+                
+            case Grunt:
+                super.setSpeed(DEFAULT_ENEMY_SPEED);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_2);
+                super.setHealth(HEALTH_3);
+                break;
+                
+            case Sorcerer:
+                super.setSpeed(ENEMY_SPEED_SLOW);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_1);
+                super.setHealth(HEALTH_1);
+                break;
+                
+            case SuperSorcerer:
+                super.setSpeed(ENEMY_SPEED_SLOWER);
+                super.setProjectileLimit(1);
+                super.setProjectileSpeedRatio(PROJECTILE_SPEED_RATIO_FASTEST);
+                super.getTimerProjectile().setReset(DELAY_PROJECTILE);
+                super.setDamage(DAMAGE_1);
+                super.setHealth(HEALTH_3);
+                break;
+                
+            case Lobber:
+                super.setSpeed(DEFAULT_ENEMY_SPEED);
+                super.setProjectileLimit(1);
+                super.setProjectileSpeedRatio(PROJECTILE_SPEED_RATIO_FASTEST);
+                super.getTimerProjectile().setReset(DELAY_PROJECTILE);
+                super.setDamage(DAMAGE_2);
+                super.setHealth(HEALTH_1);
+                break;
+                
+            case It:
+                super.setSpeed(ENEMY_SPEED_SLOW);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_3);
+                super.setHealth(HEALTH_1);
+                break;
+                
+            case Death:
+                super.setSpeed(ENEMY_SPEED_SLOW);
+                super.setProjectileLimit(0);
+                super.setProjectileSpeedRatio(0);
+                super.getTimerProjectile().setReset(0);
+                super.setDamage(DAMAGE_4);
+                super.setHealth(HEALTH_1);
+                break;
+            
             case EnemyGenerator1:
             case EnemyGenerator2:
-                //setup the spawn rate
-                setTimerCollision(SPAWN_DELAY);
+                
+                //default health
+                super.setHealth(HEALTH_1);
+                
+                //make the spawn rate a little random (between 3 - 9 seconds)
+                setTimerCollision(SPAWN_DELAY + (long)(random.nextFloat() * (SPAWN_DELAY * 2)));
                 break;
                 
             default:
-                //setup the rate of collision attack
-                setTimerCollision(DELAY_COLLISION);
-                break;
+                throw new Exception("Character type not setup here = " + getType().toString());
         }
         
         //create a new container list
@@ -110,7 +210,6 @@ public class Enemy extends Character
         super.dispose();
         
         this.timerCollision = null;
-        this.timerProjectile = null;
         this.timerHurt = null;
     }
     
@@ -163,20 +262,6 @@ public class Enemy extends Character
     }
     
     /**
-     * Setup the timer at which the enemy can attack via projectile
-     * @param delay Time delay in nanoseconds
-     */
-    protected final void setTimerProjectile(final long delay)
-    {
-        if (this.timerProjectile == null)
-            this.timerProjectile = new Timer(delay);
-        
-        //update the timer delay
-        this.timerProjectile.setReset(delay);
-        this.timerProjectile.reset();
-    }
-    
-    /**
      * Get the hurt timer.
      * @return The timer to determine when the enemy can move
      */
@@ -192,15 +277,6 @@ public class Enemy extends Character
     protected Timer getTimerCollision()
     {
         return this.timerCollision;
-    }
-    
-    /**
-     * Get the projectile timer.
-     * @return The timer to determine when to attack via projectile
-     */
-    protected Timer getTimerProjectile()
-    {
-        return this.timerProjectile;
     }
     
     /**
@@ -245,11 +321,36 @@ public class Enemy extends Character
         
         //if the enemy does not have a target, lets find one
         if (getTarget() == null)
-            assignTarget(engine.getManager().getHeroes().getClosest(this).getId());
+        {
+            //get the hero character that is closest to this enemy
+            Character tmp = engine.getManager().getHeroes().getClosest(this);
+            
+            //make sure a hero character was found before assigning a target
+            if (tmp != null)
+            {
+                //assign the target
+                assignTarget(tmp.getId());
+            }
+            else
+            {
+                //we can't continue if there is no target for the enemy
+                return;
+            }
+        }
         
         //get the assigned target
         final Character target = engine.getManager().getHeroes().getCharacter(getTarget());
 
+        //we can't continue if there is no target for the enemy
+        if (target == null)
+        {
+            //remove the previous target, so we can look for a new one
+            assignTarget(null);
+            
+            //can't continue for the moment
+            return;
+        }
+        
         //check the distance
         final double distance = Cell.getDistance(this, target);
         
@@ -260,7 +361,7 @@ public class Enemy extends Character
         if (getType() == Type.EnemyGenerator1 || getType() == Type.EnemyGenerator2)
         {
             //if this enemy isn't close enough to the target we won't update
-            if (distance > Level.DISPLAY_COLS || distance > Level.DISPLAY_ROWS)
+            if (distance > level.getRoomDimensions() * 2)
                 return;
             
             //if the timer has passed, lets see if we have an available space to spawn an enemy
@@ -315,7 +416,7 @@ public class Enemy extends Character
         else
         {
             //if this enemy isn't close enough to the target we won't update
-            if (distance > level.getRoomDimensions() * 2 || distance > level.getRoomDimensions() * 2)
+            if (distance > level.getRoomDimensions() * 3 || distance > level.getRoomDimensions() * 3)
             {
                 //pause the animation
                 getSpriteSheet().setPause(true);
@@ -424,7 +525,7 @@ public class Enemy extends Character
                 setRow(getRow() + dy);
 
                 //check for wall collision
-                if (level.hasWallCollision(this, dx, dy))
+                if (level.hasSolidCollision(this, dx, dy))
                 {
                     //restore previous location
                     setCol(col);
@@ -434,7 +535,7 @@ public class Enemy extends Character
                     setCol(getCol() + dx);
 
                     //if there is collision 
-                    if (level.hasWallCollision(this, dx, 0))
+                    if (level.hasSolidCollision(this, dx, 0))
                     {
                         //restore previous location
                         setCol(col);
@@ -444,7 +545,7 @@ public class Enemy extends Character
                         setRow(getRow() + dy);
 
                         //if we still have collision reset all back
-                        if (level.hasWallCollision(this, 0, dy))
+                        if (level.hasSolidCollision(this, 0, dy))
                         {
                             //restore previous location
                             setCol(col);
@@ -489,6 +590,18 @@ public class Enemy extends Character
                     //check for collision
                     if (hasCollision(target))
                     {
+                        switch (getType())
+                        {
+                            /**
+                             * Once these enemies attack their target, remove them
+                             */
+                            case Ghost:
+                            case Blob:
+                            case It:
+                                setHealth(0);
+                                break;
+                        }
+                        
                         //deduct health from target
                         target.setHealth(target.getHealth() - getDamage());
 
@@ -522,12 +635,12 @@ public class Enemy extends Character
         
         //update the timers
         getTimerCollision().update(engine.getTime());
-        getTimerProjectile().update(engine.getTime());
         getTimerHurt().update(engine.getTime());
     }
     
     /**
-     * Check if the enemy can shoot a projectile.
+     * Check if the enemy can shoot a projectile.<br>
+     * If the projectile timer has passed the projectile will
      * @param dx x-velocity
      * @param dy y-velocity
      */

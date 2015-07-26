@@ -1,5 +1,6 @@
 package com.gamesbykevin.gauntlet.characters.hero;
 
+import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.gauntlet.characters.Character;
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.level.Level;
@@ -23,6 +24,23 @@ public final class Human extends Hero
     @Override
     public void update(final Engine engine) throws Exception
     {
+        //update the timer
+        if (hasPowerShot())
+            getTimerPowerShot().update(engine.getTime());
+        if (hasReflectiveShot())
+            getTimerReflectiveShot().update(engine.getTime());
+        
+        //update health timer
+        getTimerHealth().update(engine.getTime());
+        
+        //if time passed, deduct health
+        if (getTimerHealth().hasTimePassed())
+        {
+            //update health
+            setHealth(getHealth() - 1);
+            getTimerHealth().reset();
+        }
+        
         double dx = 0, dy = 0;
 
         //did keyboard input occur
@@ -85,48 +103,69 @@ public final class Human extends Hero
         /**
          * Check if we want to shoot a projectile
          */
-        if (engine.getKeyboard().hasKeyReleased(KeyEvent.VK_A))
+        if (engine.getKeyboard().hasKeyPressed(KeyEvent.VK_A) && getTimerProjectile().hasTimePassed())
         {
-            //stop the key released event
-            engine.getKeyboard().removeKeyReleased(KeyEvent.VK_A);
+            //reset timer
+            getTimerProjectile().reset();
+            
+            //the projectile animation
+            final Projectile.Facing projectileAnimation;
             
             //determine which projectile animation to add
             switch ((Character.Directions)getSpriteSheet().getCurrent())
             {
                 case N:
-                    addProjectile(Projectile.Facing.N);
+                    projectileAnimation = Projectile.Facing.N;
                     break;
                     
                 case S:
-                    addProjectile(Projectile.Facing.S);
+                    projectileAnimation = Projectile.Facing.S;
                     break;
                     
                 case W:
-                    addProjectile(Projectile.Facing.W);
+                    projectileAnimation = Projectile.Facing.W;
                     break;
                     
                 case E:
-                    addProjectile(Projectile.Facing.E);
+                    projectileAnimation = Projectile.Facing.E;
                     break;
                     
                 case NW:
-                    addProjectile(Projectile.Facing.NW);
+                    projectileAnimation = Projectile.Facing.NW;
                     break;
                     
                 case NE:
-                    addProjectile(Projectile.Facing.NE);
+                    projectileAnimation = Projectile.Facing.NE;
                     break;
                     
                 case SW:
-                    addProjectile(Projectile.Facing.SW);
+                    projectileAnimation = Projectile.Facing.SW;
                     break;
                     
                 case SE:
-                    addProjectile(Projectile.Facing.SE);
+                    projectileAnimation = Projectile.Facing.SE;
                     break;
                     
                 default:
                     throw new Exception("Unexpected animation here = " + getSpriteSheet().getCurrent().toString());
+            }
+            
+            //add the projectile of the specified animation
+            addProjectile(projectileAnimation, hasReflectiveShot(), hasPowerShot());
+        }
+        else if (engine.getKeyboard().hasKeyReleased(KeyEvent.VK_S))
+        {
+            //stop the key released event
+            engine.getKeyboard().removeKeyReleased(KeyEvent.VK_S);
+            
+            //if we have a potion use it
+            if (hasPotion())
+            {
+                //remove it
+                removePotion();
+                
+                //and remove all enemies on screen
+                engine.getManager().getEnemies().removeEnemies(this);
             }
         }
         
@@ -145,16 +184,43 @@ public final class Human extends Hero
         //get the level
         final Level level = engine.getManager().getLevel();
         
+        //get the tile we have collided with
+        Tile tile = level.getSolidCollision(this, dx, dy);
+        
         /**
          * Check for collision, and if so move back to previous position
          */
-        if (level.hasWallCollision(this, dx, dy) || engine.getManager().getEnemies().hasCollision(this))
+        if (tile != null || engine.getManager().getEnemies().hasCollision(this))
         {
             super.setCol(col);
             super.setRow(row);
+            
+            //if we collided with a tile and it is a door, lets see if we can open
+            if (tile != null && tile.isDoor())
+            {
+                //if we have at least 1 key
+                if (hasKey())
+                {
+                    //remove the key
+                    removeKey();
+
+                    //unlock the door
+                    level.unlockDoor(tile);
+                }
+            }
         }
         else
         {
+            Tile tmp = level.getTile((int)getCol(), (int)getRow());
+            
+            //if we hit the exit, reset
+            if (tmp != null && tmp.isExit())
+            {
+                //reset and no need to continue
+                engine.getManager().reset(engine);
+                return;
+            }
+            
             //the updated (x,y) coordinates
             double x = level.getCoordinateX(getCol());
             double y = level.getCoordinateY(getRow());

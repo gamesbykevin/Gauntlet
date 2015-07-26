@@ -37,7 +37,7 @@ public abstract class Entity extends Sprite implements Disposable
     /**
      * Health of the character
      */
-    private int health = 10;
+    private int health = 0;
     
     /**
      * The lowest amount of health possible, 0
@@ -47,12 +47,20 @@ public abstract class Entity extends Sprite implements Disposable
     /**
      * The damage the character can cause
      */
-    private int damage = 5;
+    private int damage;
+    
+    /**
+     * Default damage
+     */
+    protected static final int DAMAGE_DEFAULT = 1;
     
     protected Entity()
     {
         //create the spritesheet
         super.createSpriteSheet();
+        
+        //set the default
+        setDamage(DAMAGE_DEFAULT);
     }
     
     /**
@@ -237,7 +245,7 @@ public abstract class Entity extends Sprite implements Disposable
      */
     public double getCollisionDistance() throws Exception
     {
-        return ((getSpriteSheet().getLocation().getWidth() * .75) / Tile.DEFAULT_DIMENSION);
+        return ((getSpriteSheet().getLocation().getWidth() * 1.000) / Tile.DEFAULT_DIMENSION);
     }
     
     /**

@@ -14,11 +14,14 @@ public final class Tile extends Entity
     public static final int DEFAULT_DIMENSION = 32;
     
     /**
-     * Every tile will only have 1 animation
+     * Every tile animation will be 1 frame
      */
     protected static final String KEY = "Default";
+
     
-    //is this tile solid, meaning should we apply collision detection
+    /**
+     * Is this tile solid, meaning should we apply collision detection
+     */
     private boolean solid = false;
     
     public enum Type
@@ -31,7 +34,10 @@ public final class Tile extends Entity
         
         //2 floors 
         //FloorWall1, FloorDoor1, 
-        FloorWall2, FloorDoor2 
+        FloorWall2, FloorDoor2,
+        
+        //the exit tile
+        Exit
     }
     
     /**
@@ -47,15 +53,16 @@ public final class Tile extends Entity
     //the type of tile this is
     private Type type;
     
+    //the animation of this tile
     private Direction direction;
     
     protected Tile(final double col, final double row, final Direction direction, final Type type)
     {
-        //store the tile type
-        setType(type);
-        
         //store the tile direction
         setDirection(direction);
+        
+        //store the tile type
+        setType(type);
         
         super.setCol(col);
         super.setRow(row);
@@ -265,13 +272,18 @@ public final class Tile extends Entity
                 y += 556;
                 break;
                 
+            case Exit:
+                x = 794;
+                y = 520;
+                break;
+                
             default:
                 throw new Exception("Type is not setup here: " + type.toString());
         }
         
         //add the animation
         super.addAnimation(KEY, x, y, DEFAULT_DIMENSION, DEFAULT_DIMENSION);
-        
+            
         //set the dimensions
         super.setDimensions();
     }
@@ -283,6 +295,15 @@ public final class Tile extends Entity
     public Type getType()
     {
         return this.type;
+    }
+    
+    /**
+     * Get the direction of the tile
+     * @return The direction of the tile
+     */
+    public Direction getDirection()
+    {
+        return this.direction;
     }
     
     /**
@@ -339,6 +360,22 @@ public final class Tile extends Entity
             //case FloorDoor1:
             case FloorWall2:
             case FloorDoor2:
+                return true;
+                
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Is this tile part of the exit?
+     * @return true if the type is exit, false otherwise
+     */
+    public boolean isExit()
+    {
+        switch (getType())
+        {
+            case Exit:
                 return true;
                 
             default:

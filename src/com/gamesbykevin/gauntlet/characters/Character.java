@@ -1,6 +1,7 @@
 package com.gamesbykevin.gauntlet.characters;
 
 import com.gamesbykevin.framework.resources.Disposable;
+import com.gamesbykevin.framework.util.Timer;
 import com.gamesbykevin.framework.util.Timers;
 
 import com.gamesbykevin.gauntlet.engine.Engine;
@@ -44,9 +45,27 @@ public abstract class Character extends Entity implements Disposable
     public static final long DEFAULT_DELAY = Timers.toNanoSeconds(250L);
     
     /**
+     * Default time to wait until the next projectile
+     */
+    protected static final long DELAY_PROJECTILE = Timers.toNanoSeconds(250L);
+    
+    /**
+     * Time to wait until the next projectile
+     */
+    protected static final long DELAY_PROJECTILE_SLOW = Timers.toNanoSeconds(350L);
+    
+    /**
+     * Time to wait until the next projectile
+     */
+    protected static final long DELAY_PROJECTILE_SLOWEST = Timers.toNanoSeconds(500L);
+    
+    //determine how often the character can attack via projectile
+    private Timer timerProjectile;
+    
+    /**
      * The number of projectiles allowed at once
      */
-    public static final int DEFAULT_PROJECTILE_LIMIT = 3;
+    public static final int DEFAULT_PROJECTILE_LIMIT = 2;
     
     //the number of projectiles allowed
     private int projectileLimit = DEFAULT_PROJECTILE_LIMIT;
@@ -62,6 +81,16 @@ public abstract class Character extends Entity implements Disposable
     protected static final double PROJECTILE_SPEED_RATIO = 2.0;
     
     /**
+     * The projectile speed with be a % of the character speed
+     */
+    protected static final double PROJECTILE_SPEED_RATIO_FASTER = 2.5;
+    
+    /**
+     * The projectile speed with be a % of the character speed
+     */
+    protected static final double PROJECTILE_SPEED_RATIO_FASTEST = 3.0;
+    
+    /**
      * Assign the speed of the projectile
      */
     private double projectileSpeedRatio = PROJECTILE_SPEED_RATIO;
@@ -72,9 +101,24 @@ public abstract class Character extends Entity implements Disposable
     private List<Projectile> projectiles;
     
     /**
-     * The speed at which the character can move
+     * The default speed at which the character can move
      */
     public static final double DEFAULT_SPEED = 0.10000;
+    
+    /**
+     * The fastest speed for the character to move
+     */
+    public static final double FASTEST_SPEED = 0.115000;
+    
+    /**
+     * The fastest speed for the character to move
+     */
+    public static final double FASTER_SPEED = 0.105000;
+    
+    /**
+     * The fastest speed for the character to move
+     */
+    public static final double SLOW_SPEED = 0.07500;
     
     //assign the default speed
     private double speed = DEFAULT_SPEED;
@@ -96,11 +140,40 @@ public abstract class Character extends Entity implements Disposable
     {
         super();
         
+        //set the default speed
+        setSpeed(DEFAULT_SPEED);
+        
         //assign the character type
         this.type = type;
         
         //create a new list for the projectiles
         this.projectiles = new ArrayList<>();
+        
+        //set the delay until the character can shoot a projectile
+        setTimerProjectile(DELAY_PROJECTILE);
+    }
+    
+    /**
+     * Setup the timer at which the enemy can attack via projectile
+     * @param delay Time delay in nanoseconds
+     */
+    protected final void setTimerProjectile(final long delay)
+    {
+        if (this.timerProjectile == null)
+            this.timerProjectile = new Timer(delay);
+        
+        //update the timer delay
+        this.timerProjectile.setReset(delay);
+        this.timerProjectile.reset();
+    }
+    
+    /**
+     * Get the projectile timer.
+     * @return The timer to determine when to attack via projectile
+     */
+    protected Timer getTimerProjectile()
+    {
+        return this.timerProjectile;
     }
     
     /**
@@ -227,7 +300,16 @@ public abstract class Character extends Entity implements Disposable
     }
     
     /**
-     * Add a projectile at this characters current location.<br>
+     * Remove all existing projectiles
+     */
+    public void removeProjectiles()
+    {
+        this.projectiles.clear();
+    }
+    
+    /**
+     * Add a basic projectile at this characters current location.<br>
+     * The projectile will not be reflective and will not be power
      * If the projectile limit has been reached, nothing will happen and false will be the result
      * @param direction Direction projectile will be facing
      * @return true if a projectile was added, false otherwise
@@ -235,11 +317,31 @@ public abstract class Character extends Entity implements Disposable
      */
     protected boolean addProjectile(final Projectile.Facing direction) throws Exception
     {
+        return addProjectile(direction, false, false);
+    }
+    
+    /**
+     * Add a projectile at this characters current location.<br>
+     * If the projectile limit has been reached, nothing will happen and false will be the result
+     * @param direction Direction projectile will be facing
+     * @param reflective Is this a reflective projectile?
+     * @param power Is this a power projectile?
+     * @return true if a projectile was added, false otherwise
+     * @throws Exception 
+     */
+    protected boolean addProjectile(final Projectile.Facing direction, final boolean reflective, final boolean power) throws Exception
+    {
         //only add the projectile if we are within the limit
         if (projectiles.size() < getProjectileLimit())
         {
             //create a new projectile
             Projectile projectile = new Projectile(direction, getSpeed() * getProjectileSpeedRatio(), getSpriteSheet().getSpriteSheetAnimation(direction).getLocation());
+            
+            //is this a reflective projectile
+            projectile.setReflective(reflective);
+            
+            //is this a power projectile
+            projectile.setPower(power);
             
             //assign the current location
             projectile.setCol(getCol());
@@ -279,6 +381,9 @@ public abstract class Character extends Entity implements Disposable
         
         //update animation
         super.updateAnimation(engine.getTime());
+        
+        //update projectile timer
+        getTimerProjectile().update(engine.getTime());
         
         //update the projectiles
         this.updateProjectiles(engine);

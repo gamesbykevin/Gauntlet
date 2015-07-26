@@ -12,7 +12,7 @@ public class LevelHelper
      * Assign the correct animations for the walls and doors
      * @param level The level we are creating
      */
-    private static void correctAnimations(final Level level)
+    private static void correctAnimations(final Level level) throws Exception
     {
         //make sure each tile has the correct animation
         for (int col = 0; col < level.getTiles()[0].length; col++)
@@ -34,83 +34,86 @@ public class LevelHelper
                 
                 if (west != null && east != null && north != null && south != null)
                 {
-                    if (west.isWall() && east.isWall() && north.isWall() && south.isWall())
+                    if (west.isSolid()&& east.isSolid() && north.isSolid() && south.isSolid())
                         tile.setDirection(Tile.Direction.NorthSouthWestEast);
                 }
                 else if (west != null && east != null && south != null)
                 {
-                    if (west.isWall() && east.isWall() && south.isWall())
+                    if (west.isSolid() && east.isSolid() && south.isSolid())
                         tile.setDirection(Tile.Direction.SouthWestEast);
                 }
                 else if (west != null && east != null && north != null)
                 {
-                    if (west.isWall() && east.isWall() && north.isWall())
+                    if (west.isSolid() && east.isSolid() && north.isSolid())
                         tile.setDirection(Tile.Direction.NorthWestEast);
                 }
                 else if (north != null && south != null && east != null)
                 {
-                    if (north.isWall() && south.isWall() && east.isWall())
+                    if (north.isSolid() && south.isSolid() && east.isSolid())
                         tile.setDirection(Tile.Direction.NorthSouthEast);
                 }
                 else if (north != null && south != null && west != null)
                 {
-                    if (north.isWall() && south.isWall() && west.isWall())
+                    if (north.isSolid() && south.isSolid() && west.isSolid())
                         tile.setDirection(Tile.Direction.NorthSouthWest);
                 }
                 else if (south != null && north != null)
                 {
-                    if (south.isWall() && north.isWall())
+                    if (south.isSolid() && north.isSolid())
                         tile.setDirection(Tile.Direction.NorthSouth);
                 }
                 else if (south != null && east != null)
                 {
-                    if (south.isWall() && east.isWall())
+                    if (south.isSolid() && east.isSolid())
                         tile.setDirection(Tile.Direction.SouthEast);
                 }
                 else if (south != null && west != null)
                 {
-                    if (south.isWall() && west.isWall())
+                    if (south.isSolid() && west.isSolid())
                         tile.setDirection(Tile.Direction.SouthWest);
                 }
                 else if (north != null && east != null)
                 {
-                    if (north.isWall() && east.isWall())
+                    if (north.isSolid() && east.isSolid())
                         tile.setDirection(Tile.Direction.NorthEast);
                 }
                 else if (north != null && west != null)
                 {
-                    if (north.isWall() && west.isWall())
+                    if (north.isSolid() && west.isSolid())
                         tile.setDirection(Tile.Direction.NorthWest);
                 }
                 else if (east != null && west != null)
                 {
-                    if (east.isWall() && west.isWall())
+                    if (east.isSolid() && west.isSolid())
                         tile.setDirection(Tile.Direction.WestEast);
                 }
                 else if (east != null)
                 {
-                    if (east.isWall())
+                    if (east.isSolid())
                         tile.setDirection(Tile.Direction.East);
                 }
                 else if (west != null)
                 {
-                    if (west.isWall())
+                    if (west.isSolid())
                         tile.setDirection(Tile.Direction.West);
                 }
                 else if (north != null)
                 {
-                    if (north.isWall())
+                    if (north.isSolid())
                         tile.setDirection(Tile.Direction.North);
                 }
                 else if (south != null)
                 {
-                    if (south.isWall())
+                    if (south.isSolid())
                         tile.setDirection(Tile.Direction.South);
                 }
                 else
                 {
                     tile.setDirection(Tile.Direction.Single);
                 }
+                
+                //assign the animation
+                tile.assignAnimation();
             }
         }
     }
@@ -154,6 +157,33 @@ public class LevelHelper
                     createBorderSouth(level, startCol, startCol + level.getRoomDimensions() + 1, startRow + level.getRoomDimensions() - 1, wallType);
                 if (room.hasWall(Room.Wall.West))
                     createBorderWest(level, startRow, startRow + level.getRoomDimensions(), startCol, wallType);
+            }
+        }
+    }
+    
+    /**
+     * Create the doors
+     * @param level The level containing the rooms that have the walls marked as doors
+     */
+    private static void createDoors(final Level level) throws Exception
+    {
+        //check each room on the maze to see where we need doors, skipping the edges
+        for (int row = 0; row < level.getMaze().getRows(); row++)
+        {
+            final int startRow = row * level.getRoomDimensions();
+                
+            for (int col = 0; col < level.getMaze().getCols(); col++)
+            {
+                final int startCol = col * level.getRoomDimensions();
+                
+                if (level.isLockedWall(col, row, Room.Wall.West))
+                {
+                    createBorderWest(level, startRow, startRow + level.getRoomDimensions(), startCol, Tile.Type.Door2);
+                }
+                else if (level.isLockedWall(col, row, Room.Wall.South))
+                {
+                    createBorderSouth(level, startCol, startCol + level.getRoomDimensions(), startRow + level.getRoomDimensions() - 1, Tile.Type.Door2);
+                }
             }
         }
     }
@@ -321,7 +351,7 @@ public class LevelHelper
                 Tile west = level.getTile(col - 1, row);
                 Tile south = level.getTile(col, row + 1);
 
-                if (south != null && west != null && south.isWall() && west.isWall())
+                if (south != null && west != null && south.isWall()&& west.isWall())
                 {
                     level.createTile(col, row, Tile.Direction.SouthEast, Tile.Type.FloorWall2);
                 }
@@ -343,14 +373,21 @@ public class LevelHelper
      */
     protected static void createTiles(final Level level) throws Exception
     {
+        //create doors
+        createDoors(level);
+        
         //create border
         createBorders(level, Tile.Type.Wall3);
+        
+        //create the exit tile
+        createExit(level);
         
         //assign the correct animations for the walls
         correctAnimations(level);
         
         //create shadows
         createShadows(level);
+        
         
         //fill in the remaining with floors
         for (int row = 0; row < level.getTiles().length; row++)
@@ -370,5 +407,129 @@ public class LevelHelper
                 level.getTile(col, row).assignAnimation();
             }
         }
+    }
+    
+    /**
+     * Unlock the door.<br>
+     * Also will unlock neighbor tiles
+     * @param level The level we need to update
+     * @param tile The door tile we need to unlock
+     * @throws Exception 
+     */
+    protected static void unlockDoor(final Level level, final Tile tile) throws Exception
+    {
+        Tile tmp;
+        
+        boolean scrollFinished1 = false;
+        boolean scrollFinished2 = false;
+        
+        final int tmpCol = level.getTileArrayIndexColumn(tile);
+        final int tmpRow = level.getTileArrayIndexRow(tile);
+        
+        switch (tile.getDirection())
+        {
+            case NorthSouth:
+                for (int row = 1; row < level.getRoomDimensions(); row++)
+                {
+                    if (!scrollFinished1)
+                    {
+                        tmp = level.getTile(tmpCol, tmpRow + row);
+                    
+                        if (tmp != null && tmp.isDoor())
+                        {
+                            if (tmp.getDirection() != Tile.Direction.NorthSouth)
+                                scrollFinished1 = true;
+                            
+                            level.createTile(tmpCol, tmpRow + row, Tile.Direction.Single, Tile.Type.FloorWall2);
+                            tmp.assignAnimation();
+                        }
+                        else
+                        {
+                            scrollFinished1 = true;
+                        }
+                    }
+                    
+                    if (!scrollFinished2)
+                    {
+                        tmp = level.getTile(tmpCol, tmpRow - row);
+                    
+                        if (tmp != null && tmp.isDoor())
+                        {
+                            if (tmp.getDirection() != Tile.Direction.NorthSouth)
+                                scrollFinished2 = true;
+                            
+                            level.createTile(tmpCol, tmpRow - row, Tile.Direction.Single, Tile.Type.FloorWall2);
+                            tmp.assignAnimation();
+                        }
+                        else
+                        {
+                            scrollFinished2 = true;
+                        }
+                    }
+                }
+                break;
+                
+            case WestEast:
+                for (int col = 1; col < level.getRoomDimensions(); col++)
+                {
+                    if (!scrollFinished1)
+                    {
+                        tmp = level.getTile(tmpCol + col, tmpRow);
+
+                        if (tmp != null && tmp.isDoor())
+                        {
+                            if (tmp.getDirection() != Tile.Direction.WestEast)
+                                scrollFinished1 = true;
+                            
+                            level.createTile(tmpCol + col, tmpRow, Tile.Direction.Single, Tile.Type.FloorWall2);
+                            tmp.assignAnimation();
+                        }
+                        else
+                        {
+                            scrollFinished1 = true;
+                        }
+                    }
+                    
+                    if (!scrollFinished2)
+                    {
+                        tmp = level.getTile(tmpCol - col, tmpRow);
+
+                        if (tmp != null && tmp.isDoor())
+                        {
+                            if (tmp.getDirection() != Tile.Direction.WestEast)
+                                scrollFinished2 = true;
+                            
+                            level.createTile(tmpCol - col, tmpRow, Tile.Direction.Single, Tile.Type.FloorWall2);
+                            tmp.assignAnimation();
+                        }
+                        else
+                        {
+                            scrollFinished2 = true;
+                        }
+                    }
+                }
+                break;
+        }
+        
+        level.createTile(tmpCol, tmpRow, Tile.Direction.Single, Tile.Type.FloorWall2);
+        tile.assignAnimation();
+        
+        //render a new image
+        level.render();
+    }
+    
+    /**
+     * Create the exit.
+     * @param level The level where we want to add an exit
+     * @throws Exception 
+     */
+    private static void createExit(final Level level) throws Exception
+    {
+        //the location of the exit
+        final int col = level.getMaze().getFinishCol() * level.getRoomDimensions() + 2;
+        final int row = level.getMaze().getFinishRow() * level.getRoomDimensions() + 2;
+        
+        //create the exit tile
+        level.createTile(col, row, Tile.Direction.Single, Tile.Type.Exit);
     }
 }

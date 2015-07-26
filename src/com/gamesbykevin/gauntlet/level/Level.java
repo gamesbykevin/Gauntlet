@@ -1,7 +1,11 @@
 package com.gamesbykevin.gauntlet.level;
 
+import com.gamesbykevin.framework.ai.AStar;
 import com.gamesbykevin.framework.awt.CustomImage;
+import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.framework.maze.Maze;
+import com.gamesbykevin.framework.maze.MazeHelper;
+import com.gamesbykevin.framework.maze.Room;
 import com.gamesbykevin.framework.maze.algorithm.*;
 
 import com.gamesbykevin.gauntlet.engine.Engine;
@@ -12,6 +16,9 @@ import com.gamesbykevin.gauntlet.shared.Shared;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * This class will represent the level
@@ -52,14 +59,30 @@ public final class Level extends CustomImage implements IElement
     private Tile[][] tiles;
     
     /**
+     * The A* algorithm used to calculate the shortest path
+     */
+    private AStar astar;
+    
+    /**
+     * List of locked rooms
+     */
+    private List<LockedRoom> lockedRooms;
+    
+    /**
+     * The number of locked doors allowed for this level
+     */
+    private int limit;
+    
+    /**
      * Create a new level
      * @param cols The column dimensions for our maze
      * @param rows The row dimensions for our maze
      * @param roomDimensions The size of each individual room in the maze
      * @param image Image containing level graphics
+     * @param random Object used to make random decisions
      * @throws Exception 
      */
-    public Level(final int cols, final int rows, final int roomDimensions, final Image image) throws Exception
+    public Level(final int cols, final int rows, final int roomDimensions, final Image image, final Random random) throws Exception
     {
         super((roomDimensions * cols) * Tile.DEFAULT_DIMENSION, (roomDimensions * rows) * Tile.DEFAULT_DIMENSION);
         
@@ -70,23 +93,17 @@ public final class Level extends CustomImage implements IElement
         if (this.roomDimensions < MIN_ROOM_DIMENSIONS)
             throw new Exception("The supplied room dimensions (" + roomDimensions + ") do not meet the minimum (" + MIN_ROOM_DIMENSIONS + ")");
         
+        //create a new list of locked rooms
+        this.lockedRooms = new ArrayList<>();
+        
         //store the sheet containing all the graphics for a level
         super.setImage(image);
         
-        //create a maze
-        maze = new RecursiveBacktracking(cols, rows);
-        maze.getProgress().setScreen(0, 0, Shared.ORIGINAL_WIDTH, Shared.ORIGINAL_HEIGHT);
-        maze.getProgress().setDescription("Creating level.. ");
-        
-        //create array for our tiles
-        this.tiles = new Tile[this.roomDimensions * rows][this.roomDimensions * cols];
+        //reset the maze object
+        reset(cols, rows, random);
         
         //create a new window where the tiles will be rendered
         this.window = new Rectangle(-Tile.DEFAULT_DIMENSION * 1, -Tile.DEFAULT_DIMENSION * 1, Shared.ORIGINAL_WIDTH + (Tile.DEFAULT_DIMENSION * 2), Shared.ORIGINAL_HEIGHT + (Tile.DEFAULT_DIMENSION * 2));
-        
-        //start location
-        super.setCol(0);
-        super.setRow(0);
     }
     
     @Override
@@ -94,19 +111,44 @@ public final class Level extends CustomImage implements IElement
     {
         super.getBufferedImage().flush();
         
-        maze.dispose();
-        maze = null;
-        
-        for (int col = 0; col < tiles[0].length; col++)
+        if (maze != null)
         {
-            for (int row = 0; row < tiles.length; row++)
-            {
-                tiles[row][col].dispose();
-                tiles[row][col] = null;
-            }
+            maze.dispose();
+            maze = null;
         }
         
-        tiles = null;
+        if (tiles != null)
+        {
+            for (int col = 0; col < tiles[0].length; col++)
+            {
+                for (int row = 0; row < tiles.length; row++)
+                {
+                    tiles[row][col].dispose();
+                    tiles[row][col] = null;
+                }
+            }
+        
+            tiles = null;
+        }
+    }
+    
+    /**
+     * Get the required keys.
+     * @return The number of keys needed to unlock all doors
+     */
+    public int getRequiredKeys()
+    {
+        return this.lockedRooms.size();
+    }
+    
+    /**
+     * Get the list of locked rooms<br>
+     * We need to know this so we know where to spawn the keys.
+     * @return The list of locked rooms.
+     */
+    public List<LockedRoom> getLockedRooms()
+    {
+        return this.lockedRooms;
     }
     
     /**
@@ -119,12 +161,68 @@ public final class Level extends CustomImage implements IElement
     }
     
     /**
+     * Create a new maze instance, which will cause a new level to be generated
+     */
+    public final void reset(final int cols, final int rows, final Random random) throws Exception
+    {
+        //create a maze
+        switch (random.nextInt(5))
+        {
+            case 0:
+                maze = new Prims(cols, rows);
+                break;
+                
+            case 1:
+                maze = new Wilsons(cols, rows);
+                break;
+                
+            case 2:
+                maze = new Kruskals(cols, rows);
+                break;
+                
+            case 3:
+                maze = new Ellers(cols, rows);
+                break;
+                
+            case 4:
+                maze = new Sidewinder(cols, rows);
+                break;
+                
+            default:
+                throw new Exception("Random chosen number not setup here.");
+        }
+        
+        maze.getProgress().setScreen(0, 0, Shared.ORIGINAL_WIDTH, Shared.ORIGINAL_HEIGHT);
+        maze.getProgress().setDescription("Creating level.. ");
+        
+        //create array for our tiles
+        this.tiles = new Tile[this.roomDimensions * rows][this.roomDimensions * cols];
+        
+        //start location
+        super.setCol(0);
+        super.setRow(0);
+        
+        //reset x,y
+        super.setX(0);
+        super.setY(0);
+    }
+    
+    /**
      * Get the maze
      * @return The maze containing the rooms for the level
      */
     public Maze getMaze()
     {
         return this.maze;
+    }
+    
+    /**
+     * Get the A* Object
+     * @return The object capable of calculating the shortest path
+     */
+    public AStar getAStar()
+    {
+        return this.astar;
     }
     
     /**
@@ -156,6 +254,17 @@ public final class Level extends CustomImage implements IElement
             //now that the maze is generated we can assign tiles
             if (getMaze().isGenerated())
             {
+                //identify the finish location, and calculate cost
+                MazeHelper.locateFinish(getMaze());
+                
+                //calculate the shortest path
+                astar = new AStar(getMaze().getStart(), getMaze().getFinish(), getMaze().getRooms());
+                astar.setDiagonal(false);
+                astar.generate();
+                
+                //create some locked doors, that require a key to open
+                generateDoors(engine.getRandom());
+                
                 //create the tiles
                 LevelHelper.createTiles(this);
                 
@@ -163,6 +272,87 @@ public final class Level extends CustomImage implements IElement
                 render();
             }
         }
+    }
+    
+    /**
+     * Here we will pick random rooms to lock
+     * @param random Object used to make random decisions
+     */
+    private void generateDoors(final Random random)
+    {
+        //create optional list
+        List<Integer> options = new ArrayList<>();
+        
+        //identify our optional rooms on the unique path to the exit
+        for (int index = 0; index < getAStar().getShortestPath().size() - 1; index++)
+        {
+            //get the current location
+            Cell tmp1 = getAStar().getShortestPath().get(index);
+            Cell tmp2 = getAStar().getShortestPath().get(index + 1);
+            
+            //avoid the edges of the maze
+            if (tmp1.getCol() < 1 || tmp1.getCol() > tiles[0].length - 2)
+                continue;
+            if (tmp2.getCol() < 1 || tmp2.getCol() > tiles[0].length - 2)
+                continue;
+            if (tmp1.getRow() < 1 || tmp1.getRow() > tiles.length - 2)
+                continue;
+            if (tmp2.getRow() < 1 || tmp2.getRow() > tiles.length - 2)
+                continue;
+            
+            //if they are direct west or south neighbors add to the list
+            if (tmp1.getCol() > tmp2.getCol() || tmp1.getRow() < tmp2.getRow())
+                options.add(index);
+        }
+        
+        /**
+         * Determine the locked door limit by the room size
+         */
+        limit = (int)((getMaze().getRows() > getMaze().getCols()) ? Math.sqrt(getMaze().getRows()) : Math.sqrt(getMaze().getCols()));
+        
+        //continue to create doors until we reach our limit, or there are no options left
+        while (!options.isEmpty() && lockedRooms.size() < limit)
+        {
+            //pick random location from our list
+            final int index = random.nextInt(options.size());
+
+            //the the location on the shortest path and the neighbor
+            Cell tmp1 = getAStar().getShortestPath().get(options.get(index));
+            Cell tmp2 = getAStar().getShortestPath().get(options.get(index) + 1);
+
+            //determine where we add the door
+            if (tmp1.getCol() > tmp2.getCol())
+            {
+                //add room to the list of locked rooms, as well as the locked wall
+                this.lockedRooms.add(new LockedRoom(tmp1, Room.Wall.West));
+            }
+            else if (tmp1.getRow() < tmp2.getRow())
+            {
+                //add room to the list of locked rooms, as well as the locked wall
+                this.lockedRooms.add(new LockedRoom(tmp1, Room.Wall.South));
+            }
+
+            //remove this from the list of options
+            options.remove(index);
+        }
+    }
+    
+    /**
+     * Is the wall in the specified room locked?
+     * @param column Column
+     * @param row Row
+     * @return true if the room is locked, false otherwise
+     */
+    protected boolean isLockedWall(final int column, final int row, final Room.Wall wall)
+    {
+        for (int index = 0; index < lockedRooms.size(); index++)
+        {
+            if (lockedRooms.get(index).hasLockedWall(column, row, wall))
+                return true;
+        }
+        
+        //we didn't find, return false
+        return false;
     }
     
     /**
@@ -310,6 +500,56 @@ public final class Level extends CustomImage implements IElement
     }
     
     /**
+     * Unlock the door
+     * @param tile One of the door tiles we made collision with
+     * @throws Exception 
+     */
+    public void unlockDoor(final Tile tile) throws Exception
+    {
+        LevelHelper.unlockDoor(this, tile);
+    }
+    
+    /**
+     * Get the array index column where the tile is located
+     * @param tile The tile we are searching for
+     * @return The index of the column in the tiles array
+     */
+    protected int getTileArrayIndexColumn(final Tile tile)
+    {
+        for (int row = 0; row < getTiles().length; row++)
+        {
+            for (int col = 0; col < getTiles()[0].length; col++)
+            {
+                if (getTile(col, row).hasId(tile))
+                    return col;
+            }
+        }
+        
+        //this should not happen
+        return -1;
+    }
+    
+    /**
+     * Get the array index row where the tile is located
+     * @param tile The tile we are searching for
+     * @return The index of the row in the tiles array
+     */
+    protected int getTileArrayIndexRow(final Tile tile)
+    {
+        for (int row = 0; row < getTiles().length; row++)
+        {
+            for (int col = 0; col < getTiles()[0].length; col++)
+            {
+                if (getTile(col, row).hasId(tile))
+                    return row;
+            }
+        }
+        
+        //this should not happen
+        return -1;
+    }
+    
+    /**
      * Get the tile at the specified location in the array.<br>
      * Note: The tile may have a different (column, row) position in the game
      * @param col Column
@@ -331,38 +571,79 @@ public final class Level extends CustomImage implements IElement
     }
     
     /**
-     * Is the character object too close to a wall
-     * @param Character The character we want to check
+     * Get the solid tile this entity is too close to
+     * @param entity The entity we want to check
      * @param dx x-velocity
      * @param dy y-velocity
-     * @return true if we are too close to a wall, false otherwise
+     * @return The solid level tile we are too close to, if none found null will be returned
+     * @throws Exception 
      */
-    public boolean hasWallCollision(final Entity entity, final double dx, final double dy) throws Exception
+    public Tile getSolidCollision(final Entity entity, final double dx, final double dy) throws Exception
     {
         int colMin = (int)(entity.getCol() - entity.getCollisionDistance());
         int colMax = (int)(entity.getCol() + entity.getCollisionDistance());
         int rowMin = (int)(entity.getRow() - entity.getCollisionDistance());
         int rowMax = (int)(entity.getRow() + entity.getCollisionDistance());
         
-        if (dx < 0 && (getTile(colMin, rowMin).isWall() || getTile(colMin, rowMax).isWall()))
+        if (dx < 0 && (getTile(colMin, rowMin).isSolid() || getTile(colMin, rowMax).isSolid()))
         {
-            return true;
+            if (getTile(colMin, rowMin).isSolid())
+            {
+                return getTile(colMin, rowMin);
+            }
+            else
+            {
+                return getTile(colMin, rowMax);
+            }
         }
-        else if (dx > 0 && (getTile(colMax, rowMin).isWall() || getTile(colMax, rowMax).isWall()))
+        else if (dx > 0 && (getTile(colMax, rowMin).isSolid() || getTile(colMax, rowMax).isSolid()))
         {
-            return true;
+            if (getTile(colMax, rowMin).isSolid())
+            {
+                return getTile(colMax, rowMin);
+            }
+            else
+            {
+                return getTile(colMax, rowMax);
+            }
         }
-        else if (dy < 0 && (getTile(colMin, rowMin).isWall() || getTile(colMax, rowMin).isWall()))
+        else if (dy < 0 && (getTile(colMin, rowMin).isSolid() || getTile(colMax, rowMin).isSolid()))
         {
-            return true;
+            if (getTile(colMin, rowMin).isSolid())
+            {
+                return getTile(colMin, rowMin);
+            }
+            else
+            {
+                return getTile(colMax, rowMin);
+            }
         }
-        else if (dy > 0 && (getTile(colMin, rowMax).isWall() || getTile(colMax, rowMax).isWall()))
+        else if (dy > 0 && (getTile(colMin, rowMax).isSolid() || getTile(colMax, rowMax).isSolid()))
         {
-            return true;
+            if (getTile(colMin, rowMax).isSolid())
+            {
+                return getTile(colMin, rowMax);
+            }
+            else
+            {
+                return getTile(colMax, rowMax);
+            }
         }
         
-        //we did not find a wall, return false
-        return false;
+        //we did not find a solid tile too close, return null
+        return null;
+    }
+    
+    /**
+     * Is the character object too close to a solid object
+     * @param Character The character we want to check
+     * @param dx x-velocity
+     * @param dy y-velocity
+     * @return true if we are too close to a solid object, false otherwise
+     */
+    public boolean hasSolidCollision(final Entity entity, final double dx, final double dy) throws Exception
+    {
+        return (getSolidCollision(entity, dx, dy) != null);
     }
     
     /**
@@ -384,7 +665,7 @@ public final class Level extends CustomImage implements IElement
     {
         return (getY() + (row * Tile.DEFAULT_DIMENSION));
     }
-
+    
     /**
      * Render a new image
      * @throws Exception 
@@ -419,6 +700,39 @@ public final class Level extends CustomImage implements IElement
         {
             //draw our maze image
             super.draw(graphics, getBufferedImage());
+        }
+    }
+
+    /**
+     * This class will represent a locked room and which wall is locked
+     */
+    public class LockedRoom extends Cell
+    {
+        private final Room.Wall lockedWall;
+        
+        private LockedRoom(final Cell cell, final Room.Wall lockedWall)
+        {
+            super(cell);
+            
+            //assign the locked wall
+            this.lockedWall = lockedWall;
+        }
+        
+        /**
+         * Do we have this locked wall?
+         * @param col Column
+         * @param row Row
+         * @param lockedWall The targeted wall
+         * @return true if the (column, row) matches as well as the specified wall, otherwise false
+         */
+        private boolean hasLockedWall(final int col, final int row, final Room.Wall lockedWall)
+        {
+            if (getCol() != col)
+                return false;
+            if (getRow() != row)
+                return false;
+            
+            return (this.lockedWall == lockedWall);
         }
     }
 }

@@ -6,11 +6,11 @@ import static com.gamesbykevin.gauntlet.characters.Character.Type.EnemyGenerator
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.level.Level;
+import com.gamesbykevin.gauntlet.level.items.Bonus;
 
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Rectangle;
-import java.util.UUID;
 
 /**
  * Projectile
@@ -20,6 +20,38 @@ public final class Projectile extends Entity
 {
     //the life of the projectile
     private boolean dead = false;
+    
+    /**
+     * Does the projectile bounce off walls?<br>
+     * If so we kill the projectile after 8 bounces or it goes off screen or until it hits an enemy
+     */
+    private boolean reflective = false;
+    
+    /**
+     * The number of walls this projectile has bounced off of
+     */
+    private int countReflective;
+    
+    /**
+     * The limited number of times the projectile can bounce off the wall
+     */
+    private static final int REFLECTIVE_LIMIT = 8;
+    
+    /**
+     * If this is a power projectile it will instantly kill any enemy it comes in contact with.
+     * This will be valid until the projectile hits a wall or kills 10 enemies
+     */
+    private boolean power = false;
+    
+    /**
+     * The number of enemies this projectile has destroyed
+     */
+    private int countPower;
+    
+    /**
+     * The limited number of enemies that can be destroyed with this projectile
+     */
+    private static final int POWER_LIMIT = 8;
     
     /**
      * The direction the projectile is facing and heading towards
@@ -119,13 +151,43 @@ public final class Projectile extends Entity
         //get the level
         final Level level = engine.getManager().getLevel();
         
-        //check for level collision
-        if (level.hasWallCollision(this, getVelocityX(), getVelocityY()))
-            setDead(true);
+        //store the location
+        final double col = getCol();
+        final double row = getRow();
         
         //update the location of the projectile
         setCol(getCol() + getVelocityX());
         setRow(getRow() + getVelocityY());
+        
+        //check for level collision, and if not reflective we will flag dead
+        if (level.hasSolidCollision(this, getVelocityX(), getVelocityY()))
+        {
+            /**
+             * If the projectile is reflective lets see if we can bounce it off the walls
+             */
+            if (isReflective() && countReflective < REFLECTIVE_LIMIT)
+            {
+                //move back to the previous location
+                setCol(col);
+                setRow(row);
+                
+                //flip the velocity
+                setVelocityX(-getVelocityX());
+                setVelocityY(-getVelocityY());
+                
+                //flip the animation as well
+                setHorizontalFlip(true);
+                setVerticalFlip(true);
+                
+                //increase the count
+                countReflective++;
+            }
+            else
+            {
+                //mark it as dead
+                setDead(true);
+            }
+        }
         
         //update where this is rendered on screen
         super.updateLocation(level);
@@ -144,11 +206,22 @@ public final class Projectile extends Entity
             {
                 //mark the projectile as dead
                 setDead(true);
+                
+                //if this is a power projectile and we haven't reached the limit, keep it alive
+                if (hasPower() && countPower < POWER_LIMIT)
+                {
+                    //increase the count
+                    countPower++;
+                
+                    //we won't remove yet
+                    setDead(false);
+                }
+                
 
                 switch (character.getType())
                 {
                     /**
-                     * If this is an enemy generator, we will perform special logic to update the animation
+                     * If this is an enemy generator, we will perform special logic
                      */
                     case EnemyGenerator1:
                     case EnemyGenerator2:
@@ -170,11 +243,61 @@ public final class Projectile extends Entity
                         }
                         break;
 
+                    /**
+                     * These enemies can't be killed
+                     */
+                    case Blob:
+                    case It:
+                    case Death:
+                        
+                        /**
+                         * Modify the enemies health, so we know it was hit and can be killed
+                         */
+                        character.setHealth(character.getHealth() + 1);
+                        
+                        //mark the projectile as dead
+                        setDead(true);
+                        break;
+                        
                     default:
 
-                        //apply damage to the found character
+                        //apply damage to the character
                         character.setHealth(character.getHealth() - getDamage());
                         break;
+                }
+            }
+            else
+            {
+                //get the bonus that we may have collision with
+                Bonus bonus = engine.getManager().getBonuses().getBonus(this);
+                
+                /**
+                 * If the hero projectile hits a bonus, handle accordingly
+                 */
+                if (bonus != null)
+                {
+                    //mark the projectile as dead
+                    setDead(true);
+                    
+                    //for some bonus types we will remove
+                    switch (bonus.getType())
+                    {
+                        /**
+                         * Keep these
+                         */
+                        case Key:
+                        case TreasureBag:
+                        case TreasureChest:
+                            break;
+                            
+                        /**
+                         * All others we will remove
+                         */
+                        default:
+                            //remove the bonus as well
+                            engine.getManager().getBonuses().remove(bonus);
+                            break;
+                    }
                 }
             }
         }
@@ -194,7 +317,56 @@ public final class Projectile extends Entity
                 //apply damage to the found character
                 character.setHealth(character.getHealth() - getDamage());
             }
+            else
+            {
+                //if the enemy projectile hits a bonus, we will remove the projectile
+                if (engine.getManager().getBonuses().getBonus(this) != null)
+                {
+                    //mark the projectile as dead
+                    setDead(true);
+                }
+            }
         }
+    }
+    
+    /**
+     * Set this projectile as reflective.<br>
+     * If this is reflective we will bounce the projectile off the wall 8 times or until it hits an enemy
+     * @param reflective true if we want the projectile to be reflective, otherwise false
+     */
+    public void setReflective(final boolean reflective)
+    {
+        this.reflective = reflective;
+    }
+    
+    /**
+     * Is this projectile reflective?<br>
+     * Reflective will cause the projectile to bounce off walls for a short time until it hits an enemy
+     * @return true = yes, false = no
+     */
+    public boolean isReflective()
+    {
+        return this.reflective;
+    }
+    
+    /**
+     * Set this projectile as a power projectile.<br>
+     * If this is a power projectile we will immediately kill enemies upon contact and continue up to 10 enemies.<br>
+     * Or until we hit a wall
+     * @param power true if we want the projectile to go directly through enemies, otherwise false
+     */
+    public void setPower(final boolean power)
+    {
+        this.power = power;
+    }
+    
+    /**
+     * Is this a power projectile?
+     * @return true = yes, false = no
+     */
+    public boolean hasPower()
+    {
+        return this.power;
     }
     
     /**

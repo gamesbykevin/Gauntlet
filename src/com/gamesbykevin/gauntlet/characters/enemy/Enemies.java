@@ -5,7 +5,6 @@ import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.gauntlet.characters.Character;
 import com.gamesbykevin.gauntlet.characters.Character.Type;
 import com.gamesbykevin.gauntlet.characters.Characters;
-import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.level.Level;
 
@@ -20,9 +19,41 @@ import java.util.Random;
  */
 public final class Enemies extends Characters
 {
+    /**
+     * The number of this type of enemy allowed per level
+     */
+    private static final int ENEMY_LIMIT_IT = 3;
+    
+    /**
+     * The number of this type of enemy allowed per level
+     */
+    private static final int ENEMY_LIMIT_DEATH = 3;
+    
+    /**
+     * The # of rooms from the start location we can start adding enemies
+     */
+    private static final int SPAWN_PADDING = 1;
+    
+    /**
+     * Our Random object used to make random decisions
+     */
+    private Random random;
+    
+    /**
+     * Create a new enemies container
+     * @param image Sprite sheet image
+     */
     public Enemies(final Image image)
     {
         super(image);
+    }
+    
+    /**
+     * Remove all existing objects
+     */
+    public void reset()
+    {
+        super.getCharacters().clear();
     }
     
     /**
@@ -32,6 +63,9 @@ public final class Enemies extends Characters
      */
     public void spawn(final Level level, final Random random) throws Exception
     {
+        if (this.random == null)
+            this.random = random;
+        
         //options to choose from
         List<Type> options = new ArrayList<>();
         options.add(Type.Blob);
@@ -47,7 +81,7 @@ public final class Enemies extends Characters
         //available tiles for the specified room
         List<Cell> available = new ArrayList<>();
         
-        //the limit  of enemies per room
+        //the max # of enemies per room, will be determined by the room size
         final int limit = (level.getRoomDimensions() / 3);
         
         //check each room in the maze
@@ -58,10 +92,13 @@ public final class Enemies extends Characters
                 //is this room a neighbor of the start location
                 boolean neighbor = false;
                 
-                //check all neighbor rooms around the start location, because we want to provide space for the player
-                for (int tmpCol = -1; tmpCol < 2; tmpCol++)
+                /**
+                 * Check all neighbor rooms around the start location.<br>
+                 * We want to provide the heroes space when they start
+                 */
+                for (int tmpCol = -SPAWN_PADDING; tmpCol <= SPAWN_PADDING; tmpCol++)
                 {
-                    for (int tmpRow = -1; tmpRow < 2; tmpRow++)
+                    for (int tmpRow = -SPAWN_PADDING; tmpRow <= SPAWN_PADDING; tmpRow++)
                     {
                         if (level.getMaze().getStartCol() + tmpCol == col && level.getMaze().getStartRow() + tmpRow == row)
                             neighbor = true;
@@ -100,14 +137,38 @@ public final class Enemies extends Characters
                 if (available.isEmpty())
                     continue;
                 
+                //count the number of enemies added
                 int count = 0;
                 
+                //pick a random position from our optional enemy list
+                final int randomEnemyIndex = random.nextInt(options.size());
+                
                 //pick random enemy type for this room
-                final Type type = options.get(random.nextInt(options.size()));
+                final Type type = options.get(randomEnemyIndex);
                 
                 //continue while we haven't reached our limit and still have available cells to choose from
                 while (count < limit && !available.isEmpty())
                 {
+                    //if the enemy created was "Death" lets make sure we don't create too many
+                    if (type == Type.Death)
+                    {
+                        //if we exceed the limit, exit loop and remove it from the options
+                        if (getEnemyCount(Type.Death) >= ENEMY_LIMIT_DEATH)
+                        {
+                            options.remove(randomEnemyIndex);
+                            break;
+                        }
+                    }
+                    else if (type == Type.It)
+                    {
+                        //if we exceed the limit, exit loop and remove it from the options
+                        if (getEnemyCount(Type.It) >= ENEMY_LIMIT_IT)
+                        {
+                            options.remove(randomEnemyIndex);
+                            break;
+                        }
+                    }
+                    
                     //pick a random index
                     final int index = random.nextInt(available.size());
                     
@@ -118,6 +179,9 @@ public final class Enemies extends Characters
                     {
                         //add enemy generator
                         add(cell.getCol() + .5, cell.getRow() + .5, (random.nextBoolean()) ? Type.EnemyGenerator1 : Type.EnemyGenerator2);
+                        
+                        //we only need 1 enemy generator per room
+                        break;
                     }
                     else
                     {
@@ -138,11 +202,58 @@ public final class Enemies extends Characters
         available = null;
     }
     
+    /**
+     * Remove all existing enemies within a certain distance of the entity.<br>
+     * This will basically clear all existing enemies on the screen
+     * @param The entity which will help identify the range of enemies to remove
+     */
+    public void removeEnemies(final Entity entity)
+    {
+        for (int index = 0; index < super.getCharacters().size(); index++)
+        {
+            //get the current character
+            Character character = getCharacters().get(index);
+            
+            //if the distance is less than the length of a typical screen (maybe a little more)
+            if (Cell.getDistance(entity, character) <= Level.SCROLL_RANGE * 2)
+            {
+                //recycle the character objects
+                character.dispose();
+                
+                //remove the character
+                getCharacters().remove(index);
+                
+                //move the index back
+                index--;
+            }
+        }
+    }
+    
+    /**
+     * Get the enemy count
+     * @param type The enemy we want to count for
+     * @return The total number of enemies that match the specified type
+     */
+    private int getEnemyCount(final Type type)
+    {
+        int count = 0;
+        
+        for (int index = 0; index < super.getCharacters().size(); index++)
+        {
+            //if the type matches increase our count
+            if (getCharacters().get(index).getType() == type)
+                count++;
+        }
+        
+        //return the count
+        return count;
+    }
+    
     @Override
     public void add(final double col, final double row, final Type type) throws Exception
     {
         //create enemy of type
-        Enemy enemy = new Enemy(type);
+        Enemy enemy = new Enemy(type, random);
         
         //assign location
         enemy.setCol(col);
