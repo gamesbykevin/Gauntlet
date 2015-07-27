@@ -4,6 +4,7 @@ import com.gamesbykevin.framework.util.Timer;
 import com.gamesbykevin.framework.util.Timers;
 
 import com.gamesbykevin.gauntlet.characters.Character;
+import com.gamesbykevin.gauntlet.resources.GameAudio;
 import com.gamesbykevin.gauntlet.shared.Shared;
 
 /**
@@ -33,6 +34,16 @@ public abstract class Hero extends Character
      * Default health
      */
     private static final int DEFAULT_HEALTH = 2500;
+    
+    /**
+     * Low health indicator
+     */
+    protected static final int HEALTH_LOW = 500;
+    
+    /**
+     * Very Low health indicator
+     */
+    protected static final int HEALTH_VERY_LOW = 100;
     
     /**
      * How long the reflective ability is enabled
@@ -66,6 +77,8 @@ public abstract class Hero extends Character
     
     //our player stats
     private Status status;
+    
+    private GameAudio.Keys audioKeyHealth;
     
     /**
      * Create a new hero of specified type
@@ -145,10 +158,42 @@ public abstract class Hero extends Character
         return this.status;
     }
     
+    protected void setHealthAudioKey(final GameAudio.Keys audioKeyHealth)
+    {
+        this.audioKeyHealth = audioKeyHealth;
+    }
+    
+    protected GameAudio.Keys getHealthAudioKey()
+    {
+        return this.audioKeyHealth;
+    }
+    
     @Override
     public void setHealth(final int health)
     {
+        //is the health above the low limits set
+        boolean beforeAboveLow = (getHealth() > HEALTH_LOW);
+        boolean beforeAboveVeryLow = (getHealth() > HEALTH_VERY_LOW);
+        
         super.setHealth(health);
+        
+        //is the health above the low limits set
+        boolean afterAboveLow = (getHealth() > HEALTH_LOW);
+        boolean afterAboveVeryLow = (getHealth() > HEALTH_VERY_LOW);
+        
+        //if we went below the limit
+        if (isDead())
+        {
+            setHealthAudioKey(GameAudio.Keys.Dead);
+        }
+        else if (beforeAboveLow && !afterAboveLow)
+        {
+            setHealthAudioKey(GameAudio.Keys.HealthLow);
+        }
+        else if (beforeAboveVeryLow && !afterAboveVeryLow)
+        {
+            setHealthAudioKey(GameAudio.Keys.HealthVeryLow);
+        }
         
         //assign health
         getStatus().setHealth(health);

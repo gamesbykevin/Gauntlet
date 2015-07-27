@@ -3,22 +3,15 @@ package com.gamesbykevin.gauntlet.manager;
 import com.gamesbykevin.gauntlet.characters.hero.Heroes;
 import com.gamesbykevin.gauntlet.characters.enemy.Enemies;
 import com.gamesbykevin.gauntlet.characters.Character;
-import com.gamesbykevin.gauntlet.characters.CharacterHelper;
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.level.items.Bonuses;
 import com.gamesbykevin.gauntlet.level.Level;
-import com.gamesbykevin.gauntlet.level.items.Bonus;
 import com.gamesbykevin.gauntlet.menu.CustomMenu;
 import com.gamesbykevin.gauntlet.menu.CustomMenu.*;
 import com.gamesbykevin.gauntlet.resources.GameAudio;
-import com.gamesbykevin.gauntlet.resources.GameFont;
 import com.gamesbykevin.gauntlet.resources.GameImages;
 
 import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.Point;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The class that contains all of the game elements
@@ -237,6 +230,9 @@ public final class Manager implements IManager
     {
         if (getLevel() != null)
         {
+            if (getHeroes().isEmpty())
+                return;
+            
             //has the maze been generated
             boolean generated = getLevel().getMaze().isGenerated();
             
@@ -251,6 +247,32 @@ public final class Manager implements IManager
                 {
                     getEnemies().spawn(getLevel(), engine.getRandom());
                     getBonuses().spawn(getLevel(), engine.getRandom());
+                    
+                    //stop all existing sound
+                    engine.getResources().stopAllSound();
+                    
+                    //play welcome sound
+                    engine.getResources().playGameAudio(GameAudio.Keys.Begin);
+                    
+                    //play random music
+                    switch (engine.getRandom().nextInt(4))
+                    {
+                        case 0:
+                            engine.getResources().playGameAudio(GameAudio.Keys.Music_Level_1, true);
+                            break;
+                            
+                        case 1:
+                            engine.getResources().playGameAudio(GameAudio.Keys.Music_Level_2, true);
+                            break;
+                            
+                        case 2:
+                            engine.getResources().playGameAudio(GameAudio.Keys.Music_Level_3, true);
+                            break;
+                            
+                        case 3:
+                            engine.getResources().playGameAudio(GameAudio.Keys.Music_Level_4, true);
+                            break;
+                    }
                 }
                 
                 if (getBonuses() != null)
@@ -259,6 +281,8 @@ public final class Manager implements IManager
                     getHeroes().update(engine);
                 if (getEnemies() != null)
                     getEnemies().update(engine);
+                if (getHeroes().isEmpty())
+                    engine.getResources().stopAllSound();
             }
         }
     }

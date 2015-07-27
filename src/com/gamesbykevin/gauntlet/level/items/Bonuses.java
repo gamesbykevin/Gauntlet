@@ -8,6 +8,7 @@ import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.level.Level;
 import com.gamesbykevin.gauntlet.level.Level.LockedRoom;
+import com.gamesbykevin.gauntlet.resources.GameAudio;
 import com.gamesbykevin.gauntlet.shared.IElement;
 
 import java.awt.Graphics;
@@ -369,37 +370,61 @@ public class Bonuses implements IElement
                 {
                     case PowerShot:
                         hero.getTimerPowerShot().reset();
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupPowerShot);
                         break;
                         
                     case ReflectiveShot:
                         hero.getTimerReflectiveShot().reset();
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupReflective);
                         break;
                         
                     case Food:
                         hero.addScore(Bonus.SCORE_FOOD);
                         hero.setHealth(hero.getHealth() + Bonus.FOOD_BONUS);
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupFood);
                         break;
                         
                     case Key:
                         hero.addScore(Bonus.SCORE_KEY);
                         hero.addKey();
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupKey);
                         break;
                         
                     case Poison:
                     case FoodPoison:
                         hero.setHealth(hero.getHealth() + Bonus.POISON_DAMAGE);
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.EatPoison);
                         break;
                         
                     case Potion:
                         hero.addPotion();
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupPotion);
                         break;
                         
                     case TreasureBag:
                         hero.addScore(Bonus.SCORE_TREASURE_BAG);
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupTreasure);
                         break;
                         
                     case TreasureChest:
                         hero.addScore(Bonus.SCORE_TREASURE_CHEST);
+                        
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.PickupTreasure);
                         break;
                 }
                 

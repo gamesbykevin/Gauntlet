@@ -371,13 +371,13 @@ public class LevelHelper
      * Create the tiles for our level
      * @throws Exception 
      */
-    protected static void createTiles(final Level level) throws Exception
+    protected static void createTiles(final Level level, final Tile.Type wallType) throws Exception
     {
         //create doors
         createDoors(level);
         
         //create border
-        createBorders(level, Tile.Type.Wall3);
+        createBorders(level, wallType);
         
         //create the exit tile
         createExit(level);

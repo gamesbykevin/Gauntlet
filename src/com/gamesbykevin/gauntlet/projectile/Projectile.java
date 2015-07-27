@@ -8,6 +8,7 @@ import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.entity.Entity;
 import com.gamesbykevin.gauntlet.level.Level;
 import com.gamesbykevin.gauntlet.level.items.Bonus;
+import com.gamesbykevin.gauntlet.resources.GameAudio;
 
 import java.awt.Graphics;
 import java.awt.Image;
@@ -246,6 +247,9 @@ public final class Projectile extends Entity
                             {
                                 Hero hero = (Hero)engine.getManager().getHeroes().getCharacter(getParentId());
                                 hero.addScore(Bonus.SCORE_ENEMY_GENERATOR);
+                                
+                                //play sound effect
+                                engine.getResources().playGameAudio(GameAudio.Keys.EnemyDead);
                             }
                         }
                         break;
@@ -276,6 +280,9 @@ public final class Projectile extends Entity
                         {
                             Hero hero = (Hero)engine.getManager().getHeroes().getCharacter(getParentId());
                             hero.addScore(Bonus.SCORE_ENEMY);
+                            
+                            //play sound effect
+                            engine.getResources().playGameAudio(GameAudio.Keys.EnemyDead);
                         }
                         break;
                 }
@@ -304,6 +311,15 @@ public final class Projectile extends Entity
                         case TreasureChest:
                             break;
                             
+                            
+                        case Food:
+                            //play sound effect
+                            engine.getResources().playGameAudio(GameAudio.Keys.ShotFood);
+                            
+                            //remove the bonus as well
+                            engine.getManager().getBonuses().remove(bonus);
+                            break;
+                            
                         /**
                          * All others we will remove
                          */
@@ -330,6 +346,9 @@ public final class Projectile extends Entity
 
                 //apply damage to the found character
                 character.setHealth(character.getHealth() - getDamage());
+                
+                //play sound effect
+                engine.getResources().playGameAudio(GameAudio.Keys.HeroHitByProjectile);
             }
             else
             {

@@ -1,11 +1,11 @@
 package com.gamesbykevin.gauntlet.characters.hero;
 
-import com.gamesbykevin.framework.base.Cell;
 import com.gamesbykevin.gauntlet.characters.Character;
 import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.level.Level;
 import com.gamesbykevin.gauntlet.level.Tile;
 import com.gamesbykevin.gauntlet.projectile.Projectile;
+import com.gamesbykevin.gauntlet.resources.GameAudio.Keys;
 
 import java.awt.event.KeyEvent;
 import java.awt.Rectangle;
@@ -39,6 +39,16 @@ public final class Human extends Hero
             //update health
             setHealth(getHealth() - 1);
             getTimerHealth().reset();
+            
+            if (isDead())
+                setHealthAudioKey(Keys.Dead);
+        }
+        
+        //play sound effect
+        if (getHealthAudioKey() != null)
+        {
+            engine.getResources().playGameAudio(getHealthAudioKey());
+            setHealthAudioKey(null);
         }
         
         double dx = 0, dy = 0;
@@ -151,7 +161,11 @@ public final class Human extends Hero
             }
             
             //add the projectile of the specified animation
-            addProjectile(projectileAnimation, hasReflectiveShot(), hasPowerShot());
+            boolean result = addProjectile(projectileAnimation, hasReflectiveShot(), hasPowerShot());
+            
+            //play sound effect if added
+            if (result)
+                engine.getResources().playGameAudio(Keys.ShootProjectile);
         }
         else if (engine.getKeyboard().hasKeyReleased(KeyEvent.VK_S))
         {
@@ -161,6 +175,9 @@ public final class Human extends Hero
             //if we have a potion use it
             if (hasPotion())
             {
+                //play sound effect
+                engine.getResources().playGameAudio(Keys.UsePotion);
+                
                 //remove it
                 removePotion();
                 
@@ -198,14 +215,22 @@ public final class Human extends Hero
             //if we collided with a tile and it is a door, lets see if we can open
             if (tile != null && tile.isDoor())
             {
-                //if we have at least 1 key
-                if (hasKey())
+                //only unlock these tiles first
+                if (tile.getDirection() == Tile.Direction.WestEast || 
+                    tile.getDirection() == Tile.Direction.NorthSouth)
                 {
-                    //remove the key
-                    removeKey();
+                    //if we have at least 1 key
+                    if (hasKey())
+                    {
+                        //play sound effect
+                        engine.getResources().playGameAudio(Keys.OpenDoor);
 
-                    //unlock the door
-                    level.unlockDoor(tile);
+                        //remove the key
+                        removeKey();
+
+                        //unlock the door
+                        level.unlockDoor(tile);
+                    }
                 }
             }
         }
@@ -216,6 +241,15 @@ public final class Human extends Hero
             //if we hit the exit, reset
             if (tmp != null && tmp.isExit())
             {
+                //stop all sound
+                engine.getResources().stopAllSound();
+                
+                //play sound effect
+                engine.getResources().playGameAudio(Keys.Exit);
+                
+                //play next level music
+                engine.getResources().playGameAudio(Keys.Music_NextLevel);
+                
                 //reset and no need to continue
                 engine.getManager().reset(engine);
                 return;

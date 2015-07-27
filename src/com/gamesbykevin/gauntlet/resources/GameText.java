@@ -9,7 +9,7 @@ import com.gamesbykevin.framework.resources.TextManager;
 public final class GameText extends TextManager
 {
     //description for progress bar
-    private static final String DESCRIPTION = "Loading Game Text Resources";
+    private static final String DESCRIPTION = "Loading Game Text Resources ";
     
     /**
      * These are the keys used to access the resources and need to match the id in the xml file

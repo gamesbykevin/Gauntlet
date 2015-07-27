@@ -5,7 +5,7 @@ import com.gamesbykevin.framework.resources.FontManager;
 public final class GameFont extends FontManager
 {
     //description for progress bar
-    private static final String DESCRIPTION = "Loading Font Resources";
+    private static final String DESCRIPTION = "Loading Font Resources ";
     
     /**
      * These are the keys used to access the resources and need to match the id in the xml file

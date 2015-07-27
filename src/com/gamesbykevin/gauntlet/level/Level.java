@@ -74,6 +74,11 @@ public final class Level extends CustomImage implements IElement
     private int limit;
     
     /**
+     * List of possible wall types
+     */
+    private List<Tile.Type> wallTypes;
+    
+    /**
      * Create a new level
      * @param cols The column dimensions for our maze
      * @param rows The row dimensions for our maze
@@ -101,6 +106,19 @@ public final class Level extends CustomImage implements IElement
         
         //reset the maze object
         reset(cols, rows, random);
+        
+        //create new list of wall types
+        this.wallTypes = new ArrayList<>();
+        this.wallTypes.add(Tile.Type.Wall1);
+        this.wallTypes.add(Tile.Type.Wall2);
+        this.wallTypes.add(Tile.Type.Wall3);
+        this.wallTypes.add(Tile.Type.Wall4);
+        this.wallTypes.add(Tile.Type.Wall5);
+        this.wallTypes.add(Tile.Type.Wall6);
+        this.wallTypes.add(Tile.Type.Wall7);
+        this.wallTypes.add(Tile.Type.Wall8);
+        this.wallTypes.add(Tile.Type.Wall9);
+        this.wallTypes.add(Tile.Type.Wall10);
         
         //create a new window where the tiles will be rendered
         this.window = new Rectangle(-Tile.DEFAULT_DIMENSION * 1, -Tile.DEFAULT_DIMENSION * 1, Shared.ORIGINAL_WIDTH + (Tile.DEFAULT_DIMENSION * 2), Shared.ORIGINAL_HEIGHT + (Tile.DEFAULT_DIMENSION * 2));
@@ -132,6 +150,12 @@ public final class Level extends CustomImage implements IElement
             }
         
             tiles = null;
+        }
+        
+        if (wallTypes != null)
+        {
+            wallTypes.clear();
+            wallTypes = null;
         }
     }
     
@@ -269,7 +293,7 @@ public final class Level extends CustomImage implements IElement
                 generateDoors(engine.getRandom());
                 
                 //create the tiles
-                LevelHelper.createTiles(this);
+                LevelHelper.createTiles(this, wallTypes.get(engine.getRandom().nextInt(wallTypes.size())));
                 
                 //render a new image
                 render();

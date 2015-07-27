@@ -9,6 +9,7 @@ import com.gamesbykevin.gauntlet.engine.Engine;
 import com.gamesbykevin.gauntlet.level.Level;
 import com.gamesbykevin.gauntlet.level.Tile;
 import com.gamesbykevin.gauntlet.projectile.Projectile.Facing;
+import com.gamesbykevin.gauntlet.resources.GameAudio;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -590,6 +591,9 @@ public class Enemy extends Character
                     //check for collision
                     if (hasCollision(target))
                     {
+                        //play sound effect
+                        engine.getResources().playGameAudio(GameAudio.Keys.HeroHurt);
+                        
                         switch (getType())
                         {
                             /**

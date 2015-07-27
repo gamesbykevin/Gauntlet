@@ -47,7 +47,7 @@ public class EngineTest
     @Before
     public void setUp() throws Exception
     {
-        engine = new Engine(null, 1);
+        engine = new Engine(new Rectangle(0,0,512,512), 1);
         panel = new JPanel();
         event = new MouseEvent(panel, 0, 0, 0, 100, 100, 1, false);
     }
@@ -70,7 +70,7 @@ public class EngineTest
     @Test
     public void getScreenTest() throws Exception
     {
-        assertNull(engine.getScreen());
+        assertNotNull(engine.getScreen());
         engine = new Engine(new Rectangle(0,0,0,0), 0);
         assertNotNull(engine.getScreen());
     }

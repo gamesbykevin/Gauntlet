@@ -39,6 +39,15 @@ public abstract class Characters implements IElement
     }
     
     /**
+     * Does this container have any characters in it?
+     * @return true if there are no characters in the list, false otherwise
+     */
+    public boolean isEmpty()
+    {
+        return getCharacters().isEmpty();
+    }
+    
+    /**
      * Add character to list
      * @param character Character we want to add
      */
@@ -133,6 +142,12 @@ public abstract class Characters implements IElement
             //get the current character
             final Character character = characters.get(index);
             
+            //update basic common elements for this character
+            character.updateCommon(engine);
+
+            //update character specified logic
+            character.update(engine);
+            
             //if the character is dead, we will remove it
             if (character.isDead())
             {
@@ -141,14 +156,6 @@ public abstract class Characters implements IElement
                 
                 //alter index
                 index--;
-            }
-            else
-            {
-                //update basic common elements for this character
-                character.updateCommon(engine);
-
-                //update character specified logic
-                character.update(engine);
             }
         }
     }
