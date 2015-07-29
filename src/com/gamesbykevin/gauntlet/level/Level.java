@@ -761,5 +761,10 @@ public final class Level extends CustomImage implements IElement
             
             return (this.lockedWall == lockedWall);
         }
+        
+        public Room.Wall getLockedWall()
+        {
+            return this.lockedWall;
+        }
     }
 }

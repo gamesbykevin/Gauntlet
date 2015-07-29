@@ -388,7 +388,6 @@ public class LevelHelper
         //create shadows
         createShadows(level);
         
-        
         //fill in the remaining with floors
         for (int row = 0; row < level.getTiles().length; row++)
         {

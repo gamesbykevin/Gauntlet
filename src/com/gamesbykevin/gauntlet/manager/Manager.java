@@ -12,6 +12,7 @@ import com.gamesbykevin.gauntlet.resources.GameAudio;
 import com.gamesbykevin.gauntlet.resources.GameImages;
 
 import java.awt.Graphics;
+import java.awt.Image;
 
 /**
  * The class that contains all of the game elements
@@ -31,6 +32,9 @@ public final class Manager implements IManager
     //the bonuses in the game
     private Bonuses bonuses;
     
+    //game over image
+    private Image image;
+    
     /**
      * Constructor for Manager, this is the point where we load any menu option configurations
      * @param engine Engine for our game that contains all objects needed
@@ -40,6 +44,8 @@ public final class Manager implements IManager
     {
         //set the audio depending on menu setting
         engine.getResources().setAudioEnabled(engine.getMenu().getOptionSelectionIndex(LayerKey.Options, OptionKey.Sound) == CustomMenu.SOUND_ENABLED);
+        
+        this.image = engine.getResources().getGameImage(GameImages.Keys.GameOver);
     }
     
     public Bonuses getBonuses()
@@ -211,6 +217,12 @@ public final class Manager implements IManager
                 bonuses = null;
             }
             
+            if (image != null)
+            {
+                image.flush();
+                image = null;
+            }
+            
             //recycle objects
             super.finalize();
         }
@@ -302,12 +314,20 @@ public final class Manager implements IManager
             //only these if the maze has been generated
             if (getLevel().getMaze().isGenerated())
             {
-                if (getEnemies() != null)
-                    getEnemies().render(graphics);
-                if (getHeroes() != null)
-                    getHeroes().render(graphics);
-                if (getBonuses() != null)
-                    getBonuses().render(graphics);
+                //if there are no heroes in the container, all are dead, display game over
+                if (getHeroes().isEmpty())
+                {
+                    graphics.drawImage(image, 0, 188, null);
+                }
+                else
+                {
+                    if (getEnemies() != null)
+                        getEnemies().render(graphics);
+                    if (getHeroes() != null)
+                        getHeroes().render(graphics);
+                    if (getBonuses() != null)
+                        getBonuses().render(graphics);
+                }
             }
         }
     }

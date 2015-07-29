@@ -4,4 +4,5 @@
     <image id="Enemies">images/game/enemies.png</image>
     <image id="Heroes">images/game/heroes.png</image>
     <image id="Bonus">images/game/bonus.png</image>
+    <image id="GameOver">images/game/gameover.png</image>
 </images>

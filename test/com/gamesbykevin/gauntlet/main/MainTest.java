@@ -24,6 +24,7 @@ public class MainTest
     private static final JPanel panel = new JPanel();
     private static final JApplet applet = new JApplet();
     
+    public static final Main MAIN = new Main(60, panel);
     
     @BeforeClass
     public static void setUpClass() 

@@ -30,6 +30,11 @@ public class EngineTest
     
     private MouseEvent event;
     
+    public EngineTest() throws Exception
+    {
+        engine = new Engine(new Rectangle(0,0,512,512), 1);
+    }
+    
     @BeforeClass
     public static void setUpClass() throws Exception
     {
@@ -210,5 +215,10 @@ public class EngineTest
     public void getKeyboardTest()
     {
         assertNotNull(engine.getKeyboard());
+    }
+    
+    public Engine getEngine()
+    {
+        return this.engine;
     }
 }

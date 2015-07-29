@@ -1,6 +1,7 @@
 package com.gamesbykevin.gauntlet.characters.enemy;
 
 import com.gamesbykevin.gauntlet.characters.Character.Type;
+import com.gamesbykevin.gauntlet.level.LevelTest;
 import static com.gamesbykevin.gauntlet.resources.ResourcesTest.TEST_IMAGE;
 import static com.gamesbykevin.gauntlet.characters.enemy.EnemyTest.RANDOM;
 
@@ -49,6 +50,7 @@ public class EnemiesTest
     public void resetTest() throws Exception
     {
         enemies = new Enemies(TEST_IMAGE);
+        enemies.spawn(new LevelTest().getLevel(), RANDOM);
         enemies.reset();
         enemies.add(0, 0, Type.Blob);
         enemies.add(0, 0, Type.Death);
@@ -80,7 +82,7 @@ public class EnemiesTest
     public void addTest() throws Exception
     {
         enemies = new Enemies(TEST_IMAGE);
-        //enemies.spawn(LEVEL_OBJECT, RANDOM);
+        enemies.spawn(new LevelTest().getLevel(), RANDOM);
         
         for (int index = 0; index < 1001; index++)
         {
